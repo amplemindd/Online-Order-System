@@ -1,168 +1,162 @@
-/* OWNER: Web student 4 (HTML + CSS) */
-
-:root {
-  --paper: #f2f5f3;
-  --ink: #17262b;
-  --muted: #53666b;
-  --line: #c9d5d1;
-  --teal: #0f766e;
-  --amber: #e8a33d;
-  --red: #b3392f;
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-head: Georgia, "Times New Roman", serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-
-* { box-sizing: border-box; }
 
 body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-body);
-  line-height: 1.55;
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fb;
+    color: #1e293b;
+    line-height: 1.6;
 }
 
-code {
-  background: #e3ebe8;
-  padding: 0.1em 0.4em;
-  border-radius: 4px;
-  font-size: 0.9em;
+/* Navbar */
+
+.navbar {
+    background-color: #172554;
+    color: white;
+    padding: 18px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* ---------- Hero ---------- */
+.logo {
+    font-size: 25px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 25px;
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.nav-links a:hover {
+    color: #93c5fd;
+}
+
+/* Hero Section */
+
 .hero {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: 4rem 1.25rem 2.5rem;
+    text-align: center;
+    padding: 90px 20px;
+    background: linear-gradient(135deg, #dbeafe, #eff6ff);
 }
 
 .hero h1 {
-  font-family: var(--font-head);
-  font-size: clamp(2.4rem, 7vw, 3.8rem);
-  line-height: 1.05;
-  margin: 0 0 1rem;
+    font-size: 42px;
+    margin-bottom: 15px;
 }
 
-.lead {
-  max-width: 34rem;
-  color: var(--muted);
-  font-size: 1.1rem;
-  margin: 0 0 2rem;
+.hero p {
+    max-width: 600px;
+    margin: 0 auto 25px;
+    color: #475569;
 }
 
-/* The connection line: the memorable part of the page */
-.link {
-  display: flex;
-  align-items: center;
-  max-width: 28rem;
+/* Buttons */
+
+.btn {
+    display: inline-block;
+    background-color: #2563eb;
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 7px;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 15px;
+    margin-top: 15px;
 }
 
-.node {
-  border: 2px solid var(--ink);
-  background: #fff;
-  padding: 0.6rem 1rem;
-  font-weight: 600;
-  white-space: nowrap;
+.btn:hover {
+    background-color: #1d4ed8;
 }
 
-.wire {
-  flex: 1;
-  min-width: 2rem;
-  height: 0;
-  border-top: 3px dashed var(--amber);
+/* Team Section */
+
+.team-section {
+    padding: 60px 20px;
+    text-align: center;
 }
 
-.link[data-state="online"] .wire { border-top: 3px solid var(--teal); }
-.link[data-state="offline"] .wire { border-top: 3px dashed var(--red); }
-.link[data-state="online"] .node { border-color: var(--teal); }
-.link[data-state="offline"] .node:last-child { border-color: var(--red); }
-
-.status-text {
-  margin: 0.75rem 0 0;
-  color: var(--muted);
-}
-.link[data-state="online"] + .status-text { color: var(--teal); font-weight: 600; }
-.link[data-state="offline"] + .status-text { color: var(--red); font-weight: 600; }
-
-/* ---------- Panels ---------- */
-main {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: 0 1.25rem 4rem;
-  display: grid;
-  gap: 2.5rem;
+.team-section h2 {
+    font-size: 30px;
+    margin-bottom: 10px;
 }
 
-.panel {
-  border-top: 2px solid var(--ink);
-  padding-top: 1rem;
+#statusMessage {
+    margin-top: 20px;
+    color: #475569;
 }
 
-.panel h2 {
-  font-family: var(--font-head);
-  font-size: 1.6rem;
-  margin: 0 0 0.25rem;
+.team-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 25px;
 }
 
-.hint {
-  margin: 0 0 1rem;
-  color: var(--muted);
-  font-size: 0.9rem;
+.team-card {
+    background-color: white;
+    padding: 25px;
+    width: 250px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px #00000012;
 }
 
-.list {
-  list-style: none;
-  margin: 1.25rem 0 0;
-  padding: 0;
+.team-card h3 {
+    color: #1d4ed8;
+    margin-bottom: 8px;
 }
 
-.list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--line);
+.team-card p {
+    color: #64748b;
 }
 
-.list li span { color: var(--muted); text-align: right; }
+/* About Page */
 
-/* ---------- Form ---------- */
-form { display: grid; gap: 0.4rem; }
-
-label { font-weight: 600; margin-top: 0.4rem; }
-
-input, textarea {
-  font: inherit;
-  padding: 0.55rem 0.7rem;
-  border: 2px solid var(--line);
-  background: #fff;
-  color: var(--ink);
-  border-radius: 4px;
+.about-section {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 35px;
+    background: white;
+    border-radius: 12px;
+    text-align: center;
 }
 
-button {
-  justify-self: start;
-  margin-top: 0.75rem;
-  font: inherit;
-  font-weight: 600;
-  padding: 0.6rem 1.2rem;
-  background: var(--ink);
-  color: #fff;
-  border: 2px solid var(--ink);
-  border-radius: 4px;
-  cursor: pointer;
-}
-button:hover { background: var(--teal); border-color: var(--teal); }
+/* Footer */
 
-input:focus-visible, textarea:focus-visible, button:focus-visible {
-  outline: 3px solid var(--amber);
-  outline-offset: 2px;
+footer {
+    background-color: #172554;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    margin-top: 40px;
 }
 
-.form-note { margin: 0.25rem 0 0; min-height: 1.5em; color: var(--muted); }
+/* Responsive */
 
-@media (max-width: 30rem) {
-  .list li { flex-direction: column; gap: 0; }
-  .list li span { text-align: left; }
-  .node { padding: 0.5rem 0.7rem; font-size: 0.9rem; }
+@media (max-width: 600px) {
+    .navbar {
+        padding: 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .hero h1 {
+        font-size: 30px;
+    }
+
+    .team-card {
+        width: 100%;
+        max-width: 320px;
+    }
 }

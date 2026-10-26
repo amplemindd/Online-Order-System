@@ -1,58 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Team Platform: Home</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Online Order System | Home</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="app.js" defer></script>
 </head>
+
 <body>
-  <!-- OWNER: Web student 4 (HTML + CSS) -->
-  <header class="hero">
-    <h1>Team Platform</h1>
-    <p class="lead">One home page, one backend, built by eleven people. The line below turns solid when the two are connected.</p>
 
-    <div class="link" id="status-pill" data-state="checking">
-      <span class="node">Web page</span>
-      <span class="wire" aria-hidden="true"></span>
-      <span class="node">Backend</span>
-    </div>
-    <p class="status-text" id="status-text" role="status">Checking the backend…</p>
-  </header>
+    <!-- Navigation -->
+    <header>
+        <nav class="navbar">
+            <h2 class="logo">OrderHub</h2>
 
-  <main>
-    <section class="panel" aria-labelledby="team-title">
-      <h2 id="team-title">Our team</h2>
-      <p class="hint">Loaded from <code>GET /api/students</code></p>
-      <ul class="list" id="team-list">
-        <li>Loading…</li>
-      </ul>
-    </section>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About</a>
+            </div>
+        </nav>
+    </header>
 
-    <section class="panel" aria-labelledby="msg-title">
-      <h2 id="msg-title">Message board</h2>
-      <p class="hint">Sent with <code>POST /api/messages</code>, read with <code>GET /api/messages</code></p>
+    <!-- Hero Section -->
+    <main>
 
-      <form id="message-form">
-        <label for="name">Your name</label>
-        <input id="name" name="name" type="text" autocomplete="name" required />
+        <section class="hero">
+            <h1>Welcome to OrderHub</h1>
 
-        <label for="text">Message</label>
-        <textarea id="text" name="text" rows="3" required></textarea>
+            <p>
+                A simple online ordering demo built to test
+                GitHub collaboration and API integration.
+            </p>
 
-        <button type="submit">Send message</button>
-        <p class="form-note" id="form-note" role="status"></p>
-      </form>
+            <a href="about.html" class="btn">Learn About Us</a>
+        </section>
 
-      <ul class="list" id="message-list">
-        <li>Loading…</li>
-      </ul>
-    </section>
-  </main>
+        <!-- Backend API Section -->
+        <section class="team-section">
 
-  <!-- Order matters: config first, then api, then app. -->
-  <script src="config.js"></script>
-  <script src="api.js"></script>
-  <script src="app.js"></script>
+            <h2>Our Development Team</h2>
+
+            <p>
+                Click the button to fetch team information
+                from our Node.js backend.
+            </p>
+
+            <button id="fetchTeamBtn" class="btn">
+                Fetch Team Details
+            </button>
+
+            <p id="statusMessage" aria-live="polite">
+                Waiting for API request...
+            </p>
+
+            <div id="teamContainer" class="team-container"></div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 OrderHub | GitHub Collaboration Demo</p>
+    </footer>
+
 </body>
+
 </html>
