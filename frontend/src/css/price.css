@@ -1,0 +1,154 @@
+/* *{
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f8;
+}
+
+
+.bill-container {
+    width: 90%;
+    max-width: 1000px;
+    margin: 40px auto;
+}
+
+
+.bill-container h1 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #222;
+}
+
+
+
+.products {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+
+.product-card {
+    background-color: white;
+    width: 280px;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+
+.product-card h3 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+
+.price {
+    color: #666;
+    font-size: 16px;
+}
+
+
+
+.quantity {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+
+.quantity button {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 6px;
+    background-color: #222;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+
+.quantity button:hover {
+    background-color: #444;
+}
+
+
+.quantity span {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+
+.product-total {
+    font-weight: bold;
+    font-size: 18px;
+    color: #222;
+}
+
+
+
+.bill {
+    background-color: white;
+    max-width: 600px;
+    margin: 35px auto;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+.bill h2 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+
+.bill-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    margin: 15px 0;
+}
+
+
+.bill hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 20px 0;
+}
+
+
+.final-price {
+    display: flex;
+    justify-content: space-between;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+
+
+@media (max-width: 600px) {
+
+    .bill-container {
+        width: 95%;
+        margin: 20px auto;
+    }
+
+    .product-card {
+        width: 100%;
+    }
+
+    .bill {
+        width: 100%;
+    }
+
+} */
