@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: Frontend/frontend
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Build React frontend
         working-directory: Frontend/frontend
