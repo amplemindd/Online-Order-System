@@ -34,9 +34,9 @@ jobs:
       - name: Upload to GoDaddy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: ftp.mb4.a3d.mytemp.website
+          username: taazamandi@taazamandi.amplemindtechnologies.com
+          password: amplemind@123
           protocol: ftps
           local-dir: ./Frontend/frontend/build/
           server-dir: ./
