@@ -31,7 +31,7 @@ import Submitted from "./project/Submitted";             // we will create this 
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/Online-Order-System">
       <Routes>
         <Route path="/" element={<AddProductForm />} />
         <Route path="/submitted" element={<Submitted />} />
