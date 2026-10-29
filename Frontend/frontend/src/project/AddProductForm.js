@@ -14,18 +14,42 @@ const AddProductForm = () => {
 
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const API_URL = "https://online-order-system-1.onrender.com";
 
-    setError("");
-    setSuccess("");
-    setLoading(true);
+const handleSubmit = async (e) => {
+e.preventDefault();
 
-    if (!image) {
-      setError("Please select a product image.");
-      setLoading(false);
-      return;
-    }
+try {
+setLoading(true);
+setError("");
+
+const response = await fetch(`${API_URL}/api/products`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    name: productName,
+    price: Number(productPrice),
+  }),
+});
+
+const data = await response.json();
+
+if (!response.ok) {
+  throw new Error(data.message || "Failed to connect to backend");
+}
+
+alert(data.message);
+console.log("Backend response:", data);
+
+} catch (error) {
+console.error("Connection error:", error);
+setError(error.message || "Unable to connect to backend");
+} finally {
+setLoading(false);
+}
+};
 
     const formData = new FormData();
     formData.append("image", image);
