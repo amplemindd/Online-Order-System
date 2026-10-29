@@ -1,5 +1,8 @@
+
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // optional – only if you use React Router
+import { useNavigate } from "react-router-dom";
+
+const API_URL = "https://online-order-system-1.onrender.com";
 
 const AddProductForm = () => {
   const [image, setImage] = useState(null);
@@ -7,49 +10,59 @@ const AddProductForm = () => {
   const [productPrice, setProductPrice] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const navigate = useNavigate(); // remove this line if you're not using React Router
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
+    setSuccess("");
     setLoading(true);
 
-    // Prepare FormData (required for file upload)
+    if (!image) {
+      setError("Please select a product image.");
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("image", image);
     formData.append("name", productName);
     formData.append("price", productPrice);
 
     try {
-      // 👇 Replace this URL with your actual API endpoint
-      const response = await fetch("http://localhost:5000/api/products", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-        name: productName,
-        price: Number(productPrice)
-    })
-});
+      const response = await fetch(`${API_URL}/api/products`, {
+        method: "POST",
+        body: formData,
+      });
 
-const data = await response.json();
+      const data = await response.json();
 
-if (!response.ok) {
-    throw new Error(data.message || "Request failed");
-}
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add product.");
+      }
 
-console.log(data);
-navigate("/submitted");
+      setSuccess("Product added successfully!");
 
-      // Success → go to /submitted
-      navigate("/submitted");          // if using React Router
-      // window.location.href = "/submitted"; // alternative without React Router
+      setImage(null);
+      setProductName("");
+      setProductPrice("");
+
+      e.target.reset();
+
+      // Navigate only if your application has this route.
+      // Uncomment the next line if you want to redirect:
+      // navigate("/submitted");
 
     } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+      console.error("Add product error:", err);
+
+      setError(
+        err.message ||
+          "Unable to connect to the server. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -60,21 +73,21 @@ navigate("/submitted");
       <h2 style={styles.title}>Add Product</h2>
 
       <form onSubmit={handleSubmit} style={styles.form}>
-        {/* Image Upload */}
         <div style={styles.field}>
           <label style={styles.label}>Upload Image</label>
+
           <input
             type="file"
             accept="image/*"
             required
-            onChange={(e) => setImage(e.target.files[0])}
+            onChange={(e) => setImage(e.target.files[0] || null)}
             style={styles.input}
           />
         </div>
 
-        {/* Product Name */}
         <div style={styles.field}>
           <label style={styles.label}>Product Name</label>
+
           <input
             type="text"
             placeholder="Enter product name"
@@ -85,9 +98,9 @@ navigate("/submitted");
           />
         </div>
 
-        {/* Product Price */}
         <div style={styles.field}>
           <label style={styles.label}>Product Price</label>
+
           <input
             type="number"
             placeholder="Enter price"
@@ -102,8 +115,17 @@ navigate("/submitted");
 
         {error && <p style={styles.error}>{error}</p>}
 
-        {/* Submit Button */}
-        <button type="submit" disabled={loading} style={styles.button}>
+        {success && <p style={styles.success}>{success}</p>}
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            ...styles.button,
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
           {loading ? "Submitting..." : "ADD PRODUCT"}
         </button>
       </form>
@@ -111,7 +133,6 @@ navigate("/submitted");
   );
 };
 
-// Simple inline styles to match the clean look of your screenshot
 const styles = {
   container: {
     maxWidth: "600px",
@@ -119,20 +140,24 @@ const styles = {
     padding: "20px",
     fontFamily: "Arial, sans-serif",
   },
+
   title: {
     textAlign: "center",
     marginBottom: "30px",
     color: "#333",
   },
+
   form: {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
   },
+
   field: {
     display: "flex",
     flexDirection: "column",
   },
+
   label: {
     marginBottom: "6px",
     fontSize: "13px",
@@ -140,6 +165,7 @@ const styles = {
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
+
   input: {
     padding: "12px 14px",
     border: "1px solid #ddd",
@@ -147,6 +173,7 @@ const styles = {
     fontSize: "15px",
     outline: "none",
   },
+
   button: {
     marginTop: "10px",
     padding: "14px 24px",
@@ -156,15 +183,16 @@ const styles = {
     borderRadius: "4px",
     fontSize: "14px",
     fontWeight: "600",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
     alignSelf: "flex-end",
   },
+
   error: {
     color: "red",
+    fontSize: "14px",
+  },
+
+  success: {
+    color: "green",
     fontSize: "14px",
   },
 };
