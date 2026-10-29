@@ -17,38 +17,36 @@ const AddProductForm = () => {
   const API_URL = "https://online-order-system-1.onrender.com";
 
 const handleSubmit = async (e) => {
-e.preventDefault();
+  e.preventDefault();
 
-try {
-setLoading(true);
-setError("");
+  try {
+    const response = await fetch(
+      `${API_URL}/api/products`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: productName,
+          price: Number(productPrice),
+        }),
+      }
+    );
 
-const response = await fetch(`${API_URL}/api/products`, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    name: productName,
-    price: Number(productPrice),
-  }),
-});
+    const data = await response.json();
 
-const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to add product");
+    }
 
-if (!response.ok) {
-  throw new Error(data.message || "Failed to connect to backend");
-}
+    alert(data.message);
+    console.log(data);
 
-alert(data.message);
-console.log("Backend response:", data);
-
-} catch (error) {
-console.error("Connection error:", error);
-setError(error.message || "Unable to connect to backend");
-} finally {
-setLoading(false);
-}
+  } catch (error) {
+    console.error("Error:", error);
+    setError(error.message);
+  }
 };
 
     const formData = new FormData();
