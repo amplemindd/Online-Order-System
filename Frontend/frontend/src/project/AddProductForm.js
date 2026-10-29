@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,44 +10,15 @@ const AddProductForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
   const navigate = useNavigate();
 
-  const API_URL = "https://online-order-system-1.onrender.com";
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  try {
-    const response = await fetch(
-      `${API_URL}/api/products`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: productName,
-          price: Number(productPrice),
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to add product");
-    }
-
-    alert(data.message);
-    console.log(data);
-
-  } catch (error) {
-    console.error("Error:", error);
-    setError(error.message);
-  }
-};
-
+    // Use FormData since you are uploading an image file
     const formData = new FormData();
     formData.append("image", image);
     formData.append("name", productName);
@@ -57,7 +27,7 @@ const handleSubmit = async (e) => {
     try {
       const response = await fetch(`${API_URL}/api/products`, {
         method: "POST",
-        body: formData,
+        body: formData, // Do NOT set Content-Type header when sending FormData; browser sets it automatically
       });
 
       const data = await response.json();
@@ -67,23 +37,17 @@ const handleSubmit = async (e) => {
       }
 
       setSuccess("Product added successfully!");
-
       setImage(null);
       setProductName("");
       setProductPrice("");
-
-      e.target.reset();
-
-      // Navigate only if your application has this route.
-      // Uncomment the next line if you want to redirect:
+      e.target.reset(); 
+      
+      // Optional redirect:
       // navigate("/submitted");
-
     } catch (err) {
       console.error("Add product error:", err);
-
       setError(
-        err.message ||
-          "Unable to connect to the server. Please try again."
+        err.message || "Unable to connect to the server. Please try again."
       );
     } finally {
       setLoading(false);
@@ -93,11 +57,9 @@ const handleSubmit = async (e) => {
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Add Product</h2>
-
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.field}>
           <label style={styles.label}>Upload Image</label>
-
           <input
             type="file"
             accept="image/*"
@@ -106,10 +68,8 @@ const handleSubmit = async (e) => {
             style={styles.input}
           />
         </div>
-
         <div style={styles.field}>
           <label style={styles.label}>Product Name</label>
-
           <input
             type="text"
             placeholder="Enter product name"
@@ -119,10 +79,8 @@ const handleSubmit = async (e) => {
             style={styles.input}
           />
         </div>
-
         <div style={styles.field}>
           <label style={styles.label}>Product Price</label>
-
           <input
             type="number"
             placeholder="Enter price"
@@ -134,11 +92,8 @@ const handleSubmit = async (e) => {
             style={styles.input}
           />
         </div>
-
         {error && <p style={styles.error}>{error}</p>}
-
         {success && <p style={styles.success}>{success}</p>}
-
         <button
           type="submit"
           disabled={loading}
@@ -162,24 +117,20 @@ const styles = {
     padding: "20px",
     fontFamily: "Arial, sans-serif",
   },
-
   title: {
     textAlign: "center",
     marginBottom: "30px",
     color: "#333",
   },
-
   form: {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
   },
-
   field: {
     display: "flex",
     flexDirection: "column",
   },
-
   label: {
     marginBottom: "6px",
     fontSize: "13px",
@@ -187,7 +138,6 @@ const styles = {
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
-
   input: {
     padding: "12px 14px",
     border: "1px solid #ddd",
@@ -195,7 +145,6 @@ const styles = {
     fontSize: "15px",
     outline: "none",
   },
-
   button: {
     marginTop: "10px",
     padding: "14px 24px",
@@ -207,12 +156,10 @@ const styles = {
     fontWeight: "600",
     alignSelf: "flex-end",
   },
-
   error: {
     color: "red",
     fontSize: "14px",
   },
-
   success: {
     color: "green",
     fontSize: "14px",
