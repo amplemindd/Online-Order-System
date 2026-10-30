@@ -1,0 +1,272 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #333333;
+  background-color: #ffffff;
+  line-height: 1.5;
+}
+
+h1,
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font-family: inherit;
+}
+
+.container {
+  width: 100%;
+  max-width: 1170px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ---------- Section 1: contact info ---------- */
+.contact-info {
+  padding: 60px 0 50px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #222222;
+  margin-bottom: 40px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.info-label {
+  font-size: 15px;
+  color: #666666;
+  margin-bottom: 8px;
+}
+
+.info-value {
+  font-size: 16px;
+  color: #333333;
+}
+
+.info-value-bold {
+  font-weight: 700;
+}
+
+/* ---------- Section 2: map ---------- */
+.map-section {
+  width: 100%;
+  line-height: 0;
+}
+
+.map-section iframe {
+  display: block;
+  width: 100%;
+  height: 480px;
+  border: 0;
+}
+
+/* ---------- Section 3: social + form ---------- */
+.bottom-section {
+  padding: 70px 0 90px;
+}
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 50px;
+  align-items: start;
+}
+
+.social-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.social-link {
+  display: inline-flex;
+  font-size: 20px;
+  color: #555555;
+}
+
+.social-link:hover,
+.social-link:focus-visible {
+  color: #111111;
+}
+
+/* ---------- Form ---------- */
+.contact-form {
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  padding: 16px 18px;
+  font-size: 13px;
+  color: #333333;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 0;
+  outline: none;
+}
+
+.contact-form textarea {
+  resize: vertical;
+  min-height: 190px;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: #aaaaaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: #888888;
+}
+
+.send-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+  background-color: #1b2a49;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.send-button:hover,
+.send-button:focus-visible {
+  background-color: #14203a;
+}
+
+.error-text {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #b3261e;
+}
+
+.success-text {
+  margin-top: 18px;
+  font-size: 14px;
+  color: #2e6b3a;
+}
+
+/* Hidden visually, still read by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Scroll to top ---------- */
+.scroll-top {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  font-size: 22px;
+  color: #ffffff;
+  background-color: #333333;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.scroll-top:hover,
+.scroll-top:focus-visible {
+  background-color: #111111;
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 992px) {
+  .page-title {
+    font-size: 30px;
+  }
+
+  .bottom-grid {
+    grid-template-columns: 1fr 1.2fr;
+    gap: 30px;
+  }
+
+  .map-section iframe {
+    height: 400px;
+  }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+  .contact-info {
+    padding: 40px 0 30px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .map-section iframe {
+    height: 320px;
+  }
+
+  .bottom-section {
+    padding: 40px 0 70px;
+  }
+
+  /* Social icons come first in the HTML, so they sit above the form */
+  .bottom-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .send-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .scroll-top {
+    right: 16px;
+    bottom: 16px;
+  }
+}

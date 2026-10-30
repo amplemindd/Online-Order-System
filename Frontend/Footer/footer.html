@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Footer</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Helvetica Neue", Arial, "Segoe UI", sans-serif; }
+    main { min-height: 60vh; padding: 40px 20px; }
+
+    .footer {
+      background: #f5f5f5;
+      color: #777;
+      border-top: 1px solid #e5e5e5;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .footer__container { max-width: 1170px; margin: 0 auto; padding: 48px 20px 0; }
+    .footer__grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px 30px;
+      padding-bottom: 36px;
+    }
+    .footer__col { min-width: 0; }
+    .footer__heading {
+      margin: 0 0 18px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #333;
+    }
+    .footer__list { list-style: none; margin: 0; padding: 0; }
+    .footer__list li { margin-bottom: 9px; }
+    .footer__link {
+      color: #777;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+      transition: color 0.2s ease;
+    }
+    .footer__link:hover, .footer__link:focus-visible { color: #222; text-decoration: underline; }
+    .footer__link:focus-visible, .footer__copy a:focus-visible { outline: 2px solid #999; outline-offset: 2px; }
+
+    .footer__contact { display: flex; align-items: flex-start; gap: 10px; }
+    .footer__icon {
+      flex: none;
+      width: 16px;
+      height: 16px;
+      margin-top: 3px;
+      color: #555;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .footer__text { overflow-wrap: anywhere; }
+
+    .footer__bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 0;
+      border-top: 1px solid #e0e0e0;
+    }
+    .footer__copy { margin: 0; font-size: 13px; }
+    .footer__copy a { color: #333; font-weight: 600; text-decoration: none; transition: color 0.2s ease; }
+    .footer__copy a:hover { color: #000; text-decoration: underline; }
+
+    .footer__payments {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .footer__card {
+      display: block;
+      width: 48px;
+      height: auto;
+      opacity: 0.9;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .footer__card:hover { opacity: 1; transform: translateY(-1px); }
+
+    @media (max-width: 991px) {
+      .footer__grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 575px) {
+      .footer__container { padding-top: 36px; }
+      .footer__grid { gap: 28px 16px; }
+      .footer__bottom { flex-direction: column; align-items: center; text-align: center; }
+      .footer__payments { justify-content: center; }
+    }
+    @media (max-width: 399px) {
+      .footer__grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Page content</h1>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__container">
+      <div class="footer__grid">
+
+        <nav class="footer__col" aria-label="Customer Service">
+          <h4 class="footer__heading">Customer Service</h4>
+          <ul class="footer__list">
+            <li><a class="footer__link" href="#contact">Contact Us</a></li>
+            <li><a class="footer__link" href="#help">Help and Advice</a></li>
+            <li><a class="footer__link" href="#shipping">Shipping &amp; Returns</a></li>
+            <li><a class="footer__link" href="#terms">Terms and Conditions</a></li>
+            <li><a class="footer__link" href="#refund">Refund Policy</a></li>
+          </ul>
+        </nav>
+
+        <nav class="footer__col" aria-label="Information">
+          <h4 class="footer__heading">Information</h4>
+          <ul class="footer__list">
+            <li><a class="footer__link" href="#about">About Us</a></li>
+            <li><a class="footer__link" href="#testimonials">Testimonials</a></li>
+            <li><a class="footer__link" href="#account">My Account</a></li>
+            <li><a class="footer__link" href="#payments">Payments &amp; Returns</a></li>
+            <li><a class="footer__link" href="#catalogues">Catalogues Online</a></li>
+          </ul>
+        </nav>
+
+        <nav class="footer__col" aria-label="About Us">
+          <h4 class="footer__heading">About Us</h4>
+          <ul class="footer__list">
+            <li><a class="footer__link" href="#who-we-are">Who We Are?</a></li>
+            <li><a class="footer__link" href="#responsibility">Corporate Responsibility</a></li>
+            <li><a class="footer__link" href="#california">California Laws</a></li>
+            <li><a class="footer__link" href="#careers">Careers</a></li>
+            <li><a class="footer__link" href="#privacy">Privacy Policy</a></li>
+          </ul>
+        </nav>
+
+        <div class="footer__col">
+          <h4 class="footer__heading">Contact Us</h4>
+          <ul class="footer__list">
+            <li class="footer__contact">
+              <svg class="footer__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <a class="footer__link" href="tel:+61225315600">Phone (+612) 2531 5600</a>
+            </li>
+            <li class="footer__contact">
+              <svg class="footer__icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <a class="footer__link" href="mailto:greenbee@domain.com">greenbee@domain.com</a>
+            </li>
+            <li class="footer__contact">
+              <svg class="footer__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <a class="footer__link" href="#location">PO Box 1622 Vissasoang Street West</a>
+            </li>
+            <li class="footer__contact">
+              <svg class="footer__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="footer__text">Opening Hours: 8:00 AM–9:00 PM</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p class="footer__copy">Copyright © 2026 <a href="#home">YourCompany</a>. All rights reserved.</p>
+        <ul class="footer__payments" aria-label="Accepted payment methods">
+          <li>
+            <svg class="footer__card" viewBox="0 0 60 32" role="img" aria-label="Visa">
+              <rect x="0.5" y="0.5" width="59" height="31" rx="3.5" fill="#fff" stroke="#d9d9d9"/>
+              <text x="30" y="21" text-anchor="middle" font-size="15" font-weight="800" font-style="italic" fill="#1a1f71" font-family="Arial,sans-serif">VISA</text>
+            </svg>
+          </li>
+          <li>
+            <svg class="footer__card" viewBox="0 0 60 32" role="img" aria-label="Mastercard">
+              <rect x="0.5" y="0.5" width="59" height="31" rx="3.5" fill="#fff" stroke="#d9d9d9"/>
+              <circle cx="23" cy="16" r="9" fill="#eb001b"/>
+              <circle cx="37" cy="16" r="9" fill="#f79e1b" fill-opacity="0.9"/>
+            </svg>
+          </li>
+          <li>
+            <svg class="footer__card" viewBox="0 0 60 32" role="img" aria-label="PayPal">
+              <rect x="0.5" y="0.5" width="59" height="31" rx="3.5" fill="#fff" stroke="#d9d9d9"/>
+              <text x="30" y="20" text-anchor="middle" font-size="12" font-weight="800" font-style="italic" font-family="Arial,sans-serif"><tspan fill="#003087">Pay</tspan><tspan fill="#009cde">Pal</tspan></text>
+            </svg>
+          </li>
+          <li>
+            <svg class="footer__card" viewBox="0 0 60 32" role="img" aria-label="American Express">
+              <rect x="0.5" y="0.5" width="59" height="31" rx="3.5" fill="#fff" stroke="#d9d9d9"/>
+              <rect x="1" y="1" width="58" height="30" rx="3" fill="#2e77bc"/>
+              <text x="30" y="21" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Arial,sans-serif">AMEX</text>
+            </svg>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

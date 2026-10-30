@@ -1,0 +1,175 @@
+.footer {
+  background: #f5f5f5;
+  color: #777;
+  border-top: 1px solid #e5e5e5;
+  font-family: "Helvetica Neue", Arial, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.footer *,
+.footer *::before,
+.footer *::after {
+  box-sizing: inherit;
+}
+
+.footer__container {
+  max-width: 1170px;
+  margin: 0 auto;
+  padding: 48px 20px 0;
+}
+
+/* ---------- Columns ---------- */
+.footer__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px 30px;
+  padding-bottom: 36px;
+}
+
+.footer__col {
+  min-width: 0;
+}
+
+.footer__heading {
+  margin: 0 0 18px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #333;
+}
+
+.footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.footer__list li {
+  margin-bottom: 9px;
+}
+
+.footer__link {
+  color: #777;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: color 0.2s ease, padding-left 0.2s ease;
+}
+
+.footer__link:hover,
+.footer__link:focus-visible {
+  color: #222;
+  text-decoration: underline;
+}
+
+.footer__link:focus-visible,
+.footer__copy a:focus-visible {
+  outline: 2px solid #999;
+  outline-offset: 2px;
+}
+
+/* ---------- Contact ---------- */
+.footer__contact {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.footer__icon {
+  flex: none;
+  margin-top: 3px;
+  color: #555;
+}
+
+.footer__text {
+  color: #777;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Bottom bar ---------- */
+.footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid #e0e0e0;
+}
+
+.footer__copy {
+  margin: 0;
+  font-size: 13px;
+  color: #777;
+}
+
+.footer__copy a {
+  color: #333;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.footer__copy a:hover {
+  color: #000;
+  text-decoration: underline;
+}
+
+.footer__payments {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer__card {
+  display: block;
+  width: 48px;
+  height: auto;
+  opacity: 0.9;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.footer__card:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* ---------- Tablet ---------- */
+@media (max-width: 991px) {
+  .footer__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------- Mobile ---------- */
+@media (max-width: 575px) {
+  .footer__container {
+    padding-top: 36px;
+  }
+
+  .footer__grid {
+    gap: 28px 16px;
+  }
+
+  .footer__bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer__payments {
+    justify-content: center;
+  }
+}
+
+/* Very small phones: single column */
+@media (max-width: 399px) {
+  .footer__grid {
+    grid-template-columns: 1fr;
+  }
+}
