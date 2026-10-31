@@ -1,0 +1,325 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+<<<<<<< HEAD
+=======
+const API_URL = "https://online-order-system-1.onrender.com";
+
+>>>>>>> origin/main
+const AddProductForm = () => {
+  const [image, setImage] = useState(null);
+  const [productName, setProductName] = useState("");
+  const [productPrice, setProductPrice] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+<<<<<<< HEAD
+
+=======
+  const [success, setSuccess] = useState("");
+>>>>>>> origin/main
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+<<<<<<< HEAD
+    setError("");
+
+    // Check whether an image is selected
+    if (!image) {
+      setError("Please upload a product image.");
+      return;
+    }
+
+    setLoading(true);
+
+    // Prepare form data
+=======
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    // Use FormData since you are uploading an image file
+>>>>>>> origin/main
+    const formData = new FormData();
+    formData.append("image", image);
+    formData.append("name", productName);
+    formData.append("price", productPrice);
+
+    try {
+<<<<<<< HEAD
+      const response = await fetch(
+        "http://localhost:5000/api/products",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      // Read the response safely
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || "Failed to add product."
+        );
+      }
+
+      console.log("Product added successfully:", data);
+
+      // Navigate only once after successful submission
+      navigate("/submitted");
+    } catch (err) {
+      console.error("Product submission error:", err);
+
+      setError(
+        err.message || "Something went wrong. Please try again."
+=======
+      const response = await fetch(`${API_URL}/api/products`, {
+        method: "POST",
+        body: formData, // Do NOT set Content-Type header when sending FormData; browser sets it automatically
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to add product.");
+      }
+
+      setSuccess("Product added successfully!");
+      setImage(null);
+      setProductName("");
+      setProductPrice("");
+      e.target.reset(); 
+      
+      // Optional redirect:
+      // navigate("/submitted");
+    } catch (err) {
+      console.error("Add product error:", err);
+      setError(
+        err.message || "Unable to connect to the server. Please try again."
+>>>>>>> origin/main
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={styles.container}>
+      <h2 style={styles.title}>Add Product</h2>
+<<<<<<< HEAD
+
+      <form onSubmit={handleSubmit} style={styles.form}>
+        {/* Image Upload */}
+        <div style={styles.field}>
+          <label style={styles.label}>
+            Upload Image
+          </label>
+
+=======
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <div style={styles.field}>
+          <label style={styles.label}>Upload Image</label>
+>>>>>>> origin/main
+          <input
+            type="file"
+            accept="image/*"
+            required
+<<<<<<< HEAD
+            onChange={(e) => {
+              setImage(e.target.files[0] || null);
+              setError("");
+            }}
+            style={styles.input}
+          />
+        </div>
+
+        {/* Product Name */}
+        <div style={styles.field}>
+          <label style={styles.label}>
+            Product Name
+          </label>
+
+=======
+            onChange={(e) => setImage(e.target.files[0] || null)}
+            style={styles.input}
+          />
+        </div>
+        <div style={styles.field}>
+          <label style={styles.label}>Product Name</label>
+>>>>>>> origin/main
+          <input
+            type="text"
+            placeholder="Enter product name"
+            value={productName}
+<<<<<<< HEAD
+            onChange={(e) =>
+              setProductName(e.target.value)
+            }
+=======
+            onChange={(e) => setProductName(e.target.value)}
+>>>>>>> origin/main
+            required
+            style={styles.input}
+          />
+        </div>
+<<<<<<< HEAD
+
+        {/* Product Price */}
+        <div style={styles.field}>
+          <label style={styles.label}>
+            Product Price
+          </label>
+
+=======
+        <div style={styles.field}>
+          <label style={styles.label}>Product Price</label>
+>>>>>>> origin/main
+          <input
+            type="number"
+            placeholder="Enter price"
+            value={productPrice}
+<<<<<<< HEAD
+            onChange={(e) =>
+              setProductPrice(e.target.value)
+            }
+=======
+            onChange={(e) => setProductPrice(e.target.value)}
+>>>>>>> origin/main
+            required
+            min="0"
+            step="0.01"
+            style={styles.input}
+          />
+        </div>
+<<<<<<< HEAD
+
+        {/* Error Message */}
+        {error && (
+          <p style={styles.error}>
+            {error}
+          </p>
+        )}
+
+        {/* Submit Button */}
+=======
+        {error && <p style={styles.error}>{error}</p>}
+        {success && <p style={styles.success}>{success}</p>}
+>>>>>>> origin/main
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            ...styles.button,
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
+        >
+          {loading ? "Submitting..." : "ADD PRODUCT"}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+<<<<<<< HEAD
+// Existing design preserved
+=======
+>>>>>>> origin/main
+const styles = {
+  container: {
+    maxWidth: "600px",
+    margin: "40px auto",
+    padding: "20px",
+    fontFamily: "Arial, sans-serif",
+  },
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
+  title: {
+    textAlign: "center",
+    marginBottom: "30px",
+    color: "#333",
+  },
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "20px",
+  },
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
+  field: {
+    display: "flex",
+    flexDirection: "column",
+  },
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
+  label: {
+    marginBottom: "6px",
+    fontSize: "13px",
+    color: "#666",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
+  input: {
+    padding: "12px 14px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "15px",
+    outline: "none",
+  },
+<<<<<<< HEAD
+
+=======
+>>>>>>> origin/main
+  button: {
+    marginTop: "10px",
+    padding: "14px 24px",
+    backgroundColor: "#111",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "14px",
+    fontWeight: "600",
+<<<<<<< HEAD
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "8px",
+    alignSelf: "flex-end",
+  },
+
+=======
+    alignSelf: "flex-end",
+  },
+>>>>>>> origin/main
+  error: {
+    color: "red",
+    fontSize: "14px",
+  },
+<<<<<<< HEAD
+};
+
+export default AddProductForm;
+=======
+  success: {
+    color: "green",
+    fontSize: "14px",
+  },
+};
+
+export default AddProductForm;
+>>>>>>> origin/main
