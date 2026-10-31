@@ -30,7 +30,7 @@ const AddProductForm = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/products",
+        "https://online-order-system-1.onrender.com/api/products",
         {
           method: "POST",
           body: formData,
