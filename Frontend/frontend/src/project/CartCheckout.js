@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./CartCheckout.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://online-order-system-1.onrender.com";
 
 const getSavedCart = () => {
     try {

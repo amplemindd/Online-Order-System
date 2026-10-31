@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import "../projectCss/ProductList.css";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://online-order-system-1.onrender.com";
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
