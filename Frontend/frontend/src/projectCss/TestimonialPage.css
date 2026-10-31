@@ -1,0 +1,144 @@
+/* ===== Reset & Base ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* ===== Page Container ===== */
+.testimonial-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+  background-color: #ffffff;
+}
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ===== Page Title ===== */
+.page-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 40px;
+  letter-spacing: -0.5px;
+}
+
+/* ===== Testimonials List ===== */
+.testimonials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* ===== Individual Card ===== */
+.testimonial-card {
+  display: flex;
+  gap: 30px;
+  padding: 25px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.testimonial-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* ===== Image ===== */
+.testimonial-image {
+  flex-shrink: 0;
+  width: 140px;
+  height: 140px;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #f0f0f0;
+}
+
+.testimonial-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ===== Content ===== */
+.testimonial-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #222;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.text {
+  font-size: 15px;
+  color: #555;
+  line-height: 1.7;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+  .testimonial-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .testimonial-image {
+    width: 160px;
+    height: 160px;
+  }
+
+  .page-title {
+    font-size: 28px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .testimonial-page {
+    padding: 25px 15px;
+  }
+
+  .testimonial-card {
+    padding: 20px;
+  }
+
+  .name {
+    font-size: 15px;
+  }
+
+  .text {
+    font-size: 14px;
+  }
+}
