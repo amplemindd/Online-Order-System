@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import "./CartCheckout.css";
 
 const API_URL = "http://localhost:5000";
@@ -34,9 +33,10 @@ const saveCart = (cart) => {
     window.dispatchEvent(new Event("greenbee-cart-updated"));
 };
 
+// ==================== CART PAGE ====================
+
 export const CartPage = () => {
     const [cart, setCart] = useState(getSavedCart);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const syncCart = () => setCart(getSavedCart());
@@ -52,9 +52,13 @@ export const CartPage = () => {
 
     const updateQuantity = (index, amount) => {
         const updated = [...cart];
+
         updated[index] = {
             ...updated[index],
-            quantity: Math.max(1, Number(updated[index].quantity) + amount)
+            quantity: Math.max(
+                1,
+                Number(updated[index].quantity) + amount
+            ),
         };
 
         setCart(updated);
@@ -63,12 +67,14 @@ export const CartPage = () => {
 
     const removeItem = (index) => {
         const updated = cart.filter((_, i) => i !== index);
+
         setCart(updated);
         saveCart(updated);
     };
 
     const subtotal = cart.reduce(
-        (total, item) => total + Number(item.price) * Number(item.quantity),
+        (total, item) =>
+            total + Number(item.price) * Number(item.quantity),
         0
     );
 
@@ -84,7 +90,11 @@ export const CartPage = () => {
                     <div className="gb-empty-cart-icon">🛒</div>
                     <h2>Your cart is empty</h2>
                     <p>Add some products to get started.</p>
-                    <Link to="/products" className="gb-primary-button">
+
+                    <Link
+                        to="/products"
+                        className="gb-primary-button"
+                    >
                         EXPLORE PRODUCTS
                     </Link>
                 </div>
@@ -100,29 +110,38 @@ export const CartPage = () => {
                                     src={getImageUrl(item.image_path)}
                                     alt={item.name}
                                     onError={(e) => {
-                                        e.currentTarget.style.visibility = "hidden";
+                                        e.currentTarget.style.visibility =
+                                            "hidden";
                                     }}
                                 />
 
                                 <div className="gb-cart-item-info">
                                     <h3>{item.name}</h3>
+
                                     <p>
                                         {item.size} / {item.color}
                                     </p>
+
                                     <strong>{money(item.price)}</strong>
 
                                     <div className="gb-cart-quantity">
                                         <button
                                             type="button"
-                                            onClick={() => updateQuantity(index, -1)}
+                                            onClick={() =>
+                                                updateQuantity(index, -1)
+                                            }
                                             aria-label="Decrease quantity"
                                         >
                                             −
                                         </button>
+
                                         <span>{item.quantity}</span>
+
                                         <button
                                             type="button"
-                                            onClick={() => updateQuantity(index, 1)}
+                                            onClick={() =>
+                                                updateQuantity(index, 1)
+                                            }
                                             aria-label="Increase quantity"
                                         >
                                             +
@@ -139,7 +158,10 @@ export const CartPage = () => {
                                 </div>
 
                                 <strong className="gb-cart-line-total">
-                                    {money(Number(item.price) * Number(item.quantity))}
+                                    {money(
+                                        Number(item.price) *
+                                            Number(item.quantity)
+                                    )}
                                 </strong>
                             </article>
                         ))}
@@ -163,14 +185,17 @@ export const CartPage = () => {
                             <strong>{money(subtotal)}</strong>
                         </div>
 
-                        <button
+                        <Link
+                            to="/checkout"
                             className="gb-primary-button gb-full-button"
-                            onClick={() => navigate("/checkout")}
                         >
                             PROCEED TO CHECKOUT
-                        </button>
+                        </Link>
 
-                        <Link to="/products" className="gb-continue-link">
+                        <Link
+                            to="/products"
+                            className="gb-continue-link"
+                        >
                             Continue shopping
                         </Link>
                     </aside>
@@ -180,10 +205,13 @@ export const CartPage = () => {
     );
 };
 
+// ==================== CHECKOUT PAGE ====================
+
 export const CheckoutPage = () => {
     const [cart, setCart] = useState(getSavedCart);
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState("");
+
     const [form, setForm] = useState({
         email: "",
         news: false,
@@ -196,29 +224,37 @@ export const CheckoutPage = () => {
         state: "Maharashtra",
         postalCode: "",
         phone: "",
-        saveInfo: false
+        saveInfo: false,
     });
-
-    const navigate = useNavigate();
 
     useEffect(() => {
         const syncCart = () => setCart(getSavedCart());
+
         window.addEventListener("greenbee-cart-updated", syncCart);
+        window.addEventListener("storage", syncCart);
+
         return () => {
-            window.removeEventListener("greenbee-cart-updated", syncCart);
+            window.removeEventListener(
+                "greenbee-cart-updated",
+                syncCart
+            );
+
+            window.removeEventListener("storage", syncCart);
         };
     }, []);
 
     const subtotal = cart.reduce(
-        (total, item) => total + Number(item.price) * Number(item.quantity),
+        (total, item) =>
+            total + Number(item.price) * Number(item.quantity),
         0
     );
 
     const handleChange = (e) => {
         const { name, value, checked, type } = e.target;
+
         setForm((previous) => ({
             ...previous,
-            [name]: type === "checkbox" ? checked : value
+            [name]: type === "checkbox" ? checked : value,
         }));
     };
 
@@ -231,11 +267,6 @@ export const CheckoutPage = () => {
             return;
         }
 
-        /*
-         * This currently validates the checkout form and shows a confirmation.
-         * A real order is not saved to MySQL yet. That requires a backend
-         * order-creation API and matching orders/order_items table columns.
-         */
         setSubmitting(true);
 
         try {
@@ -250,20 +281,27 @@ export const CheckoutPage = () => {
                     state: form.state,
                     postalCode: form.postalCode,
                     country: form.country,
-                    phone: form.phone
+                    phone: form.phone,
                 },
+
                 items: cart,
-                subtotal: Number(subtotal.toFixed(2))
+                subtotal: Number(subtotal.toFixed(2)),
             };
 
-            localStorage.setItem("greenbee_checkout_draft", JSON.stringify(order));
+            localStorage.setItem(
+                "greenbee_checkout_draft",
+                JSON.stringify(order)
+            );
 
             setMessage(
                 "Details validated. MySQL order saving/payment is not connected yet."
             );
         } catch (error) {
             console.error("Checkout error:", error);
-            setMessage("Unable to prepare your order. Please try again.");
+
+            setMessage(
+                "Unable to prepare your order. Please try again."
+            );
         } finally {
             setSubmitting(false);
         }
@@ -273,7 +311,11 @@ export const CheckoutPage = () => {
         return (
             <main className="gb-checkout-empty">
                 <h2>Your cart is empty</h2>
-                <Link to="/products" className="gb-primary-button">
+
+                <Link
+                    to="/products"
+                    className="gb-primary-button"
+                >
                     EXPLORE PRODUCTS
                 </Link>
             </main>
@@ -301,9 +343,14 @@ export const CheckoutPage = () => {
                     <form onSubmit={handleSubmit}>
                         <div className="gb-checkout-section-heading">
                             <h2>Contact</h2>
+
                             <button
                                 type="button"
-                                onClick={() => setMessage("Sign-in is not configured yet.")}
+                                onClick={() =>
+                                    setMessage(
+                                        "Sign-in is not configured yet."
+                                    )
+                                }
                             >
                                 Sign in
                             </button>
@@ -325,13 +372,17 @@ export const CheckoutPage = () => {
                                 checked={form.news}
                                 onChange={handleChange}
                             />
+
                             Email me with news and offers
                         </label>
 
-                        <h2 className="gb-checkout-section-title">Delivery</h2>
+                        <h2 className="gb-checkout-section-title">
+                            Delivery
+                        </h2>
 
                         <label className="gb-floating-field">
                             <span>Country/Region</span>
+
                             <select
                                 name="country"
                                 value={form.country}
@@ -351,6 +402,7 @@ export const CheckoutPage = () => {
                                 value={form.firstName}
                                 onChange={handleChange}
                             />
+
                             <input
                                 name="lastName"
                                 placeholder="Last name"
@@ -386,6 +438,7 @@ export const CheckoutPage = () => {
 
                             <label className="gb-floating-field">
                                 <span>State</span>
+
                                 <select
                                     name="state"
                                     value={form.state}
@@ -427,10 +480,13 @@ export const CheckoutPage = () => {
                                 checked={form.saveInfo}
                                 onChange={handleChange}
                             />
+
                             Save this information for next time
                         </label>
 
-                        <h3 className="gb-shipping-heading">Shipping method</h3>
+                        <h3 className="gb-shipping-heading">
+                            Shipping method
+                        </h3>
 
                         <div className="gb-shipping-notice">
                             Enter your shipping address to view available
@@ -438,20 +494,27 @@ export const CheckoutPage = () => {
                         </div>
 
                         {message && (
-                            <p className="gb-checkout-message" role="status">
+                            <p
+                                className="gb-checkout-message"
+                                role="status"
+                            >
                                 {message}
                             </p>
                         )}
 
                         <div className="gb-checkout-bottom">
-                            <Link to="/cart">← Return to cart</Link>
+                            <Link to="/cart">
+                                ← Return to cart
+                            </Link>
 
                             <button
                                 className="gb-primary-button"
                                 type="submit"
                                 disabled={submitting}
                             >
-                                {submitting ? "PROCESSING..." : "CONTINUE"}
+                                {submitting
+                                    ? "PROCESSING..."
+                                    : "CONTINUE"}
                             </button>
                         </div>
                     </form>
@@ -470,24 +533,38 @@ export const CheckoutPage = () => {
                                     src={getImageUrl(item.image_path)}
                                     alt={item.name}
                                 />
+
                                 <span>{item.quantity}</span>
                             </div>
 
                             <div className="gb-checkout-product-details">
                                 <p>{item.name}</p>
-                                <span>{item.size} / {item.color}</span>
+
+                                <span>
+                                    {item.size} / {item.color}
+                                </span>
                             </div>
 
                             <strong>
-                                {money(Number(item.price) * Number(item.quantity))}
+                                {money(
+                                    Number(item.price) *
+                                        Number(item.quantity)
+                                )}
                             </strong>
                         </div>
                     ))}
 
                     <div className="gb-checkout-summary-row">
-                        <span>Subtotal · {cart.reduce(
-                            (sum, item) => sum + Number(item.quantity), 0
-                        )} items</span>
+                        <span>
+                            Subtotal ·{" "}
+                            {cart.reduce(
+                                (sum, item) =>
+                                    sum + Number(item.quantity),
+                                0
+                            )}{" "}
+                            items
+                        </span>
+
                         <span>{money(subtotal)}</span>
                     </div>
 
@@ -498,6 +575,7 @@ export const CheckoutPage = () => {
 
                     <div className="gb-checkout-grand-total">
                         <strong>Total</strong>
+
                         <div>
                             <span>USD</span>
                             <strong>{money(subtotal)}</strong>
