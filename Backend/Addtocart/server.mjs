@@ -24,16 +24,16 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Middleware
 app.use(
-    cors({
-        origin: [
-            "http://localhost:3000",
-            "http://localhost:5173"
-        ]
-    })
+  cors({
+    origin: [
+      "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
+      "https://online-order-system-98rp.onrender.com"
+    ]
+  })
 );
 
+// Middleware
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
 
