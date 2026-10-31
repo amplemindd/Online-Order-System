@@ -1,0 +1,153 @@
+.home {
+  background: #f8f9fc;
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+.back {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 60px 20px 100px;
+  gap: 40px;
+  position: relative;
+}
+
+.divleft {
+  flex: 1;
+  max-width: 520px;
+}
+
+.divleft h1 {
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #1a1a2e;
+  margin-bottom: 20px;
+}
+
+.blue-text {
+  color: #3b5bdb;
+}
+
+.divleft p {
+  color: #666;
+  font-size: 16px;
+  line-height: 1.7;
+  margin-bottom: 30px;
+}
+
+.learn-btn {
+  background: #ff9f1c;
+  color: white;
+  border: none;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.learn-btn:hover {
+  background: #e08e00;
+}
+
+.divright {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 480px;
+}
+
+.blue-shape {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 420px;
+  height: 480px;
+  background: linear-gradient(135deg, #3b5bdb, #4c6ef5);
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  z-index: 1;
+}
+
+.coach-img {
+  position: relative;
+  z-index: 2;
+  height: 460px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+}
+
+.booking-bar {
+  max-width: 1100px;
+  margin: -50px auto 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 30px;
+  gap: 15px;
+  position: relative;
+  z-index: 10;
+}
+
+.booking-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: 0.2s;
+}
+
+.booking-item:hover {
+  background: #f0f4ff;
+}
+
+.booking-item .icon {
+  font-size: 18px;
+}
+
+.book-btn {
+  background: #ff9f1c;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: 0.3s;
+}
+
+.book-btn:hover {
+  background: #e08e00;
+}
+
+@media (max-width: 900px) {
+  .back {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .divleft h1 {
+    font-size: 36px;
+  }
+
+  .booking-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
