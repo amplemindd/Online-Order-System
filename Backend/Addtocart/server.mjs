@@ -25,17 +25,16 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 app.use(
-  cors({
-    origin: [
-      "https://online-order-system-qxpz0c4ip-amplemind.vercel.app"
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-  })
+    cors({
+        origin: [
+            "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
+            "https://online-order-system-98rp.onrender.com"
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"]
+    })
 );
 
-app.use(express.json());
-
-app.use(express.json());
 
 // Middleware
 app.use(express.json());
