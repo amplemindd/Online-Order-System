@@ -63,7 +63,7 @@ const ProductList = () => {
             ) || [];
         } catch {
             return [];
-        }
+        };
     };
 
     // Notify other components when the cart changes
