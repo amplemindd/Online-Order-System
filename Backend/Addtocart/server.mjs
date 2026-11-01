@@ -27,6 +27,7 @@ if (!fs.existsSync(uploadDir)) {
 app.use(
     cors({
         origin: [
+            "https://online-order-system-exotak4fr-amplemind.vercel.app",
             "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
             "https://online-order-system-98rp.onrender.com"
         ],
