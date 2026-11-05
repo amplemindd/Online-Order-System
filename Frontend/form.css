@@ -1,0 +1,122 @@
+
+.contact-page {
+  width: 100%;
+  min-height: 75vh;
+  box-sizing: border-box;
+  padding: 70px 5%;
+  background: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.contact-form {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.contact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 35px;
+  margin-bottom: 25px;
+}
+
+.contact-form input,
+.contact-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-bottom-color: #eeeeee;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 16px;
+  color: #333;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.contact-form input {
+  height: 42px;
+}
+
+.contact-form input::placeholder,
+.contact-form textarea::placeholder {
+  color: #b8b8b8;
+  opacity: 1;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border: 1px solid #76a86c;
+}
+
+.contact-form .full-field {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.contact-form .message-field {
+  display: block;
+  height: 115px;
+  resize: vertical;
+  margin-bottom: 35px;
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.send-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 22px;
+  background: #080808;
+  color: #fff;
+  border: none;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.send-button:hover {
+  background: #292929;
+}
+
+.mail-icon {
+  font-size: 17px;
+}
+
+@media (max-width: 600px) {
+  .contact-page {
+    padding: 40px 20px;
+  }
+
+  .contact-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+/* Mouse cursor box par jaate hi green */
+.contact-form input:hover,
+.contact-form textarea:hover {
+  border-color: green;
+}
+
+/* Click karne par bhi green */
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: green;
+  box-shadow: 0 0 4px rgba(0, 128, 0, 0.3);
+  transition: all 0.2s ease;
+}

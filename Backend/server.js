@@ -8,6 +8,9 @@ const PORT = 3000;
 app.use(cors());
 
 app.use(express.json());
+const authRoutes = require("./routes/auth");
+
+app.use("/api", authRoutes);
 
 // Health API
 app.get("/api/health", (req, res) => {
