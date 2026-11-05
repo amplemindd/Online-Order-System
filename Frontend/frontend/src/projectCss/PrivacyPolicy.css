@@ -1,0 +1,108 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+  color: #333333;
+  line-height: 1.6;
+}
+
+/* ========== Top Header ========== */
+.privacy-wrapper {
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.top-title {
+  text-align: center;
+  padding: 28px 20px 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.top-title h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #222222;
+  text-transform: uppercase;
+}
+
+/* ========== Main Content ========== */
+.content-box {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 30px 80px;
+}
+
+.main-heading {
+  font-size: 26px;
+  font-weight: 700;
+  color: #222222;
+  margin-bottom: 28px;
+}
+
+.text-content p {
+  font-size: 16px;
+  color: #444444;
+  margin-bottom: 18px;
+  line-height: 1.7;
+  text-align: left;
+}
+
+/* ========== Section Heading ========== */
+.section-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222222;
+  margin-top: 50px;
+  margin-bottom: 18px;
+}
+
+.section-intro {
+  font-size: 16px;
+  color: #444444;
+  margin-bottom: 30px;
+  line-height: 1.7;
+}
+
+/* ========== Policy Blocks ========== */
+.policy-block {
+  margin-bottom: 32px;
+}
+
+.policy-block h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #222222;
+  margin-bottom: 10px;
+}
+
+.policy-block p {
+  font-size: 16px;
+  color: #444444;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .content-box {
+    padding: 30px 20px 60px;
+  }
+
+  .main-heading {
+    font-size: 22px;
+  }
+
+  .top-title h1 {
+    font-size: 18px;
+  }
+
+  .section-heading {
+    font-size: 20px;
+  }
+}

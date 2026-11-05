@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Team Platform: Home</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- OWNER: Web student 4 (HTML + CSS) -->
+  <header class="hero">
+    <h1>Team Platform</h1>
+    <p class="lead">One home page, one backend, built by eleven people. The line below turns solid when the two are connected.</p>
+
+    <div class="link" id="status-pill" data-state="checking">
+      <span class="node">Web page</span>
+      <span class="wire" aria-hidden="true"></span>
+      <span class="node">Backend</span>
+    </div>
+    <p class="status-text" id="status-text" role="status">Checking the backend…</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="team-title">
+      <h2 id="team-title">Our team</h2>
+      <p class="hint">Loaded from <code>GET /api/students</code></p>
+      <ul class="list" id="team-list">
+        <li>Loading…</li>
+      </ul>
+    </section>
+
+    <section class="panel" aria-labelledby="msg-title">
+      <h2 id="msg-title">Message board</h2>
+      <p class="hint">Sent with <code>POST /api/messages</code>, read with <code>GET /api/messages</code></p>
+
+      <form id="message-form">
+        <label for="name">Your name</label>
+        <input id="name" name="name" type="text" autocomplete="name" required />
+
+        <label for="text">Message</label>
+        <textarea id="text" name="text" rows="3" required></textarea>
+
+        <button type="submit">Send message</button>
+        <p class="form-note" id="form-note" role="status"></p>
+      </form>
+
+      <ul class="list" id="message-list">
+        <li>Loading…</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- Order matters: config first, then api, then app. -->
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

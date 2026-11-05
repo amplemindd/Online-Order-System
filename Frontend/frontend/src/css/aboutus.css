@@ -1,0 +1,404 @@
+.about-section {
+  background: hsl(30, 25%, 98%);
+  min-height: 100vh;
+  padding: 80px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 60px;
+  padding: 0 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.about-left {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 500px;
+}
+
+.circle-bg {
+  width: 420px;
+  height: 420px;
+  background: #3b5bdb;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 1;
+}
+
+.about-img {
+  position: relative;
+  z-index: 2;
+  width: 380px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.2));
+}
+
+
+.about-right {
+  flex: 1.1;
+  max-width: 520px;
+}
+
+.about-right h1 {
+  font-size: 42px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.25;
+  margin-bottom: 25px;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 30px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ccc;
+  display: inline-block;
+}
+
+.dot.active {
+  background: #3b5bdb;
+}
+
+.about-text p {
+  color: #555;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 18px;
+}
+
+.vertical-text {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  transform-origin: center;
+  font-size: 72px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.06);
+  letter-spacing: 8px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 992px) {
+  .about-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .about-right {
+    max-width: 100%;
+  }
+
+  .about-right h1 {
+    font-size: 34px;
+  }
+
+  
+
+  .circle-bg {
+    width: 340px;
+    height: 340px;
+  }
+
+  .about-img {
+    width: 300px;
+  }
+}
+
+.fitness-section {
+  background: #3b5bdb;
+  padding: 80px 0;
+  color: white;
+}
+
+.fitness-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  padding: 0 40px;
+}
+
+.fitness-left {
+  flex: 1;
+  max-width: 520px;
+}
+
+.fitness-left h2 {
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-bottom: 25px;
+  color: white;
+}
+
+.white-dots .dot {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.white-dots .dot.active {
+  background: white;
+}
+
+.fitness-text p {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 18px;
+}
+
+
+.fitness-right {
+  flex: 1.1;
+  position: relative;
+}
+
+
+
+.fitness-img {
+  width: 100%;
+  height: 420px;
+  object-fit: cover;
+  display: block;
+}
+
+@media (max-width: 992px) {
+  .fitness-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .fitness-left h2 {
+    font-size: 32px;
+  }
+
+  .fitness-img {
+    height: 320px;
+  }
+}
+
+.testimonials-section {
+  background: #f8f9fc;
+  padding: 90px 0 70px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.section-header h2 {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 15px;
+}
+
+.testimonials-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  padding: 0 30px;
+}
+
+.testimonial-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  transition: 0.3s;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.card-left-bar {
+  width: 12px;
+  background: #3b5bdb;
+  flex-shrink: 0;
+}
+
+.card-content {
+  padding: 25px 25px 25px 20px;
+  position: relative;
+}
+
+.client-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+.client-info img {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.client-info h4 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.client-info span {
+  font-size: 13px;
+  color: #ff9f1c;
+  font-weight: 500;
+}
+
+.quote-icon {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 42px;
+  font-weight: 800;
+  color: #e0e4f5;
+  line-height: 1;
+}
+
+.card-content p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.7;
+  margin: 0;
+}
+
+
+.blog-section {
+  background: #fff;
+  padding: 80px 0 90px;
+}
+
+.blog-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  padding: 0 30px;
+}
+
+.blog-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+  transition: 0.3s;
+}
+
+.blog-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.blog-img-wrapper {
+  position: relative;
+  height: 220px;
+  overflow: hidden;
+}
+
+.blog-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: 0.4s;
+}
+
+.blog-card:hover .blog-img-wrapper img {
+  transform: scale(1.08);
+}
+
+.blog-tag {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background: #ff9f1c;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 4px;
+}
+
+.blog-meta {
+  display: flex;
+  gap: 20px;
+  padding: 18px 20px 8px;
+  font-size: 13px;
+  color: #888;
+}
+
+.blog-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  padding: 0 20px;
+  margin: 8px 0 12px;
+  line-height: 1.4;
+}
+
+.blog-card p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.7;
+  padding: 0 20px;
+  margin-bottom: 15px;
+}
+
+.read-more {
+  display: inline-block;
+  padding: 0 20px 22px;
+  color: #ff9f1c;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.read-more:hover {
+  color: #e08e00;
+}
+
+@media (max-width: 992px) {
+  .testimonials-container,
+  .blog-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .testimonials-container,
+  .blog-container {
+    grid-template-columns: 1fr;
+  }
+}

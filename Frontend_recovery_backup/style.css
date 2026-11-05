@@ -1,0 +1,168 @@
+/* OWNER: Web student 4 (HTML + CSS) */
+
+:root {
+  --paper: #f2f5f3;
+  --ink: #17262b;
+  --muted: #53666b;
+  --line: #c9d5d1;
+  --teal: #0f766e;
+  --amber: #e8a33d;
+  --red: #b3392f;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-head: Georgia, "Times New Roman", serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.55;
+}
+
+code {
+  background: #e3ebe8;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 4rem 1.25rem 2.5rem;
+}
+
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: clamp(2.4rem, 7vw, 3.8rem);
+  line-height: 1.05;
+  margin: 0 0 1rem;
+}
+
+.lead {
+  max-width: 34rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+  margin: 0 0 2rem;
+}
+
+/* The connection line: the memorable part of the page */
+.link {
+  display: flex;
+  align-items: center;
+  max-width: 28rem;
+}
+
+.node {
+  border: 2px solid var(--ink);
+  background: #fff;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.wire {
+  flex: 1;
+  min-width: 2rem;
+  height: 0;
+  border-top: 3px dashed var(--amber);
+}
+
+.link[data-state="online"] .wire { border-top: 3px solid var(--teal); }
+.link[data-state="offline"] .wire { border-top: 3px dashed var(--red); }
+.link[data-state="online"] .node { border-color: var(--teal); }
+.link[data-state="offline"] .node:last-child { border-color: var(--red); }
+
+.status-text {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+}
+.link[data-state="online"] + .status-text { color: var(--teal); font-weight: 600; }
+.link[data-state="offline"] + .status-text { color: var(--red); font-weight: 600; }
+
+/* ---------- Panels ---------- */
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 0 1.25rem 4rem;
+  display: grid;
+  gap: 2.5rem;
+}
+
+.panel {
+  border-top: 2px solid var(--ink);
+  padding-top: 1rem;
+}
+
+.panel h2 {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  margin: 0 0 0.25rem;
+}
+
+.hint {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.list {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+}
+
+.list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.list li span { color: var(--muted); text-align: right; }
+
+/* ---------- Form ---------- */
+form { display: grid; gap: 0.4rem; }
+
+label { font-weight: 600; margin-top: 0.4rem; }
+
+input, textarea {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 2px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 4px;
+}
+
+button {
+  justify-self: start;
+  margin-top: 0.75rem;
+  font: inherit;
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  background: var(--ink);
+  color: #fff;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  cursor: pointer;
+}
+button:hover { background: var(--teal); border-color: var(--teal); }
+
+input:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 3px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.form-note { margin: 0.25rem 0 0; min-height: 1.5em; color: var(--muted); }
+
+@media (max-width: 30rem) {
+  .list li { flex-direction: column; gap: 0; }
+  .list li span { text-align: left; }
+  .node { padding: 0.5rem 0.7rem; font-size: 0.9rem; }
+}

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const mysql = require("mysql2");
 require("dotenv").config();
 
@@ -18,3 +19,22 @@ db.connect((err) => {
 });
 
 module.exports = db;
+=======
+import mysql from "mysql2/promise";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const db = mysql.createPool({
+    host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || "online_order_system",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+export default db;
+>>>>>>> f39e9c5 (Save current frontend and backend changes)

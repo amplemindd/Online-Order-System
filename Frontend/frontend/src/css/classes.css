@@ -1,0 +1,121 @@
+.classes-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 60px 30px 90px;
+  background: #fafafa;
+  min-height: 80vh;
+}
+
+.days-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 50px;
+  flex-wrap: wrap;
+  background: #f0f2f8;
+  padding: 8px;
+  border-radius: 50px;
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.day-btn {
+  border: none;
+  background: transparent;
+  padding: 12px 22px;
+  border-radius: 40px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.day-btn:hover {
+  color: #3b5bdb;
+}
+
+.day-btn.active {
+  background: #ff9f1c;
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 159, 28, 0.35);
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+.class-card {
+  background: white;
+  border-radius: 16px;
+  padding: 35px 20px;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  transition: 0.3s;
+  border: 1px solid #f0f0f0;
+}
+
+.class-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+.class-icon {
+  width: 70px;
+  height: 70px;
+  background: #eef1ff;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 32px;
+}
+
+.class-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+.trainer {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 18px;
+}
+
+.time-badge {
+  display: inline-block;
+  background: #fff3e0;
+  color: #ff9f1c;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+
+@media (max-width: 992px) {
+  .classes-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .classes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .days-tabs {
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .classes-grid {
+    grid-template-columns: 1fr;
+  }
+}
