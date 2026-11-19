@@ -9,6 +9,7 @@ const AuthContext = createContext(null);
 
 const API_URL =
   process.env.REACT_APP_API_URL || "http://localhost:5000";
+  console.log("PRODUCTION API URL:", API_URL);
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(
@@ -25,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  console.log("PRODUCTION API URL:", API_URL);
+  
   // LOGIN
   const login = async (email, password) => {
     const response = await fetch(`${API_URL}/api/login`, {
