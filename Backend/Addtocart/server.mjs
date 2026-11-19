@@ -30,18 +30,33 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-app.use(
-    cors({
-        origin: [
-            "https://online-order-system-exotak4fr-amplemind.vercel.app",
-            "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
-            "https://online-order-system-98rp.onrender.com",
-            "http://localhost:3000",
-        ],
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"]
-    })
-);
+const allowedOrigins = [
+  "https://online-order-system-exotak4fr-amplemind.vercel.app",
+  "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
+  "https://online-order-system-ir33vlojp-amplemind.vercel.app",
+  "https://online-order-system-98rp.onrender.com",
+  "http://localhost:3000"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests without an Origin header, such as server-to-server requests.
+    if (!origin) return callback(null, true);
+
+    // Allow explicitly listed origins and this project's Vercel preview deployments.
+    const isAllowed =
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/online-order-system-[a-z0-9]+-amplemind\.vercel\.app$/.test(origin);
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked origin: ${origin}`));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 
 // Middleware
