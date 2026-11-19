@@ -34,6 +34,7 @@ const allowedOrigins = [
   "https://online-order-system-exotak4fr-amplemind.vercel.app",
   "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
   "https://online-order-system-ir33vlojp-amplemind.vercel.app",
+  "https://online-order-system-xi.vercel.app",
   "https://online-order-system-98rp.onrender.com",
   "http://localhost:3000"
 ];
