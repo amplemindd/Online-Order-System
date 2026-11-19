@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  console.log("PRODUCTION API URL:", API_URL);
   // LOGIN
   const login = async (email, password) => {
     const response = await fetch(`${API_URL}/api/login`, {
