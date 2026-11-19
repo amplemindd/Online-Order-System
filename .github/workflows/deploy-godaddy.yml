@@ -36,7 +36,7 @@ jobs:
         with:
           server: ftp.mb4.a3d.mytemp.website
           username: taazamandi@taazamandi.amplemindtechnologies.com
-          password: amplemind@123
+          password: Amplemind@123
           protocol: ftps
           local-dir: ./Frontend/frontend/build/
           server-dir: ./
