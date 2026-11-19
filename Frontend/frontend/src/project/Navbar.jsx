@@ -1,8 +1,11 @@
-import React from "react";
 import { Link, NavLink } from "react-router-dom";
 import "../projectCss/Navbar.css";
+import { useAuth } from "./AuthContext";
+import React, { useState } from "react";
 
 const Navbar = () => {
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const { user, isAuthenticated, logout } = useAuth();
     return (
         <header className="greenbee-header">
 
@@ -30,13 +33,78 @@ const Navbar = () => {
                     {/* Right Side Actions */}
                     <div className="greenbee-actions">
 
-                        <button
-                            className="greenbee-icon-button"
-                            aria-label="Settings"
-                            title="Settings"
+                        
+<div className="greenbee-settings">
+    <button
+        type="button"
+        className="greenbee-icon-button"
+        aria-label="Settings"
+        aria-expanded={settingsOpen}
+        onClick={() => setSettingsOpen(!settingsOpen)}
+    >
+        ⚙
+    </button>
+
+    {settingsOpen && (
+        <div className="greenbee-settings-menu">
+
+            {isAuthenticated ? (
+                <>
+                    <div className="settings-user-info">
+                        <strong>
+                            {user.first_name} {user.last_name}
+                        </strong>
+                        <small>{user.email}</small>
+                    </div>
+
+                    <Link
+                        to="/account"
+                        onClick={() => setSettingsOpen(false)}
+                    >
+                        My Account
+                    </Link>
+
+                    {user.role === "admin" && (
+                        <Link
+                            to="/admin"
+                            onClick={() => setSettingsOpen(false)}
                         >
-                            ⚙
-                        </button>
+                            Admin Dashboard
+                        </Link>
+                    )}
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            logout();
+                            setSettingsOpen(false);
+                        }}
+                    >
+                        Logout
+                    </button>
+                </>
+            ) : (
+                <>
+                    <Link
+                        to="/register"
+                        onClick={() => setSettingsOpen(false)}
+                    >
+                        Register
+                    </Link>
+
+                    <Link
+                        to="/login"
+                        onClick={() => setSettingsOpen(false)}
+                    >
+                        Login
+                    </Link>
+                </>
+            )}
+
+        </div>
+    )}
+</div>
+
 
                         <Link
                             to="/cart"

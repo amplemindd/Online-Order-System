@@ -1,0 +1,29 @@
+/* Optional additions to Admin.css */
+.gb-order-detail {
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid #e5ebe5;
+  border-radius: 12px;
+  background: #fff;
+}
+.gb-order-detail p { line-height: 1.6; }
+.gb-order-detail select, .product-table select {
+  padding: 8px 10px;
+  border: 1px solid #dce5dc;
+  border-radius: 7px;
+  background: #fff;
+  text-transform: capitalize;
+}
+.gb-payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.gb-payment-option input { accent-color: #176d47; }
+.gb-payment-option span { display: flex; flex-direction: column; gap: 4px; }
+.gb-payment-option small, .gb-price-note { color: #777; font-size: 12px; }

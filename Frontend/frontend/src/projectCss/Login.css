@@ -1,0 +1,243 @@
+
+.login-page {
+    width: 100%;
+    min-height: 450px;
+    background: #fff;
+    color: #222;
+    font-family: Arial, sans-serif;
+}
+
+/* Breadcrumb */
+.login-breadcrumb {
+    height: 70px;
+    width: 100%;
+    background: #eeeeee;
+    display: flex;
+    align-items: center;
+    padding-left: max(calc((100% - 1166px) / 2), 25px);
+    box-sizing: border-box;
+    gap: 9px;
+    font-size: 11px;
+    color: #999;
+}
+
+.login-breadcrumb a {
+    color: #888;
+    text-decoration: none;
+}
+
+.login-breadcrumb span:nth-child(2) {
+    font-size: 8px;
+    color: #aaa;
+}
+
+/* Container */
+.login-container {
+    width: 570px;
+    max-width: calc(100% - 40px);
+    margin: 78px auto 65px;
+}
+
+/* Heading */
+.login-heading {
+    height: 27px;
+    border-bottom: 1px solid #ededed;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.login-heading h2 {
+    font-size: 16px;
+    line-height: 22px;
+    font-weight: 700;
+    margin: 0;
+    color: #171717;
+}
+
+.login-heading::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 171px;
+    height: 2px;
+    background: #69c6a2;
+}
+
+/* Instruction */
+.login-instruction {
+    font-size: 13px;
+    margin: 0 0 17px;
+    color: #333;
+}
+
+/* Input */
+.login-input-group {
+    display: flex;
+    width: 100%;
+    height: 47px;
+    border: 1px solid #e3e5e8;
+    border-radius: 2px;
+    margin-bottom: 9px;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.login-input-group:focus-within {
+    border-color: #69b99a;
+}
+
+.login-input-icon {
+    width: 46px;
+    min-width: 46px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #e3e5e8;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.login-input-icon::after {
+    content: "";
+    position: absolute;
+    right: -5px;
+    top: 17px;
+    width: 8px;
+    height: 8px;
+    border-top: 1px solid #e3e5e8;
+    border-right: 1px solid #e3e5e8;
+    background: #fff;
+    transform: rotate(45deg);
+}
+
+.login-input-icon svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: #c7cbd0;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.login-input-group input {
+    flex: 1;
+    width: 0;
+    height: 100%;
+    border: none;
+    outline: none;
+    padding: 0 24px;
+    font-size: 11px;
+    color: #444;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.login-input-group input::placeholder {
+    color: #c3c7ce;
+    opacity: 1;
+}
+
+/* Password toggle */
+.login-password-toggle {
+    width: 45px;
+    min-width: 45px;
+    height: 100%;
+    border: none;
+    background: #eeeeee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+
+.login-password-toggle svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: #333;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Forgot password */
+.login-forgot {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #999;
+}
+
+.login-forgot span {
+    color: #555;
+    font-size: 13px;
+    margin-right: 3px;
+}
+
+.login-forgot a,
+.login-register-text a {
+    color: #5995d6;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Register link */
+.login-register-text {
+    font-size: 12px;
+    color: #222;
+    margin: 12px 0 21px;
+}
+
+/* Button */
+.login-submit-button {
+    width: 119px;
+    height: 44px;
+    border: none;
+    border-radius: 3px;
+    background: #222;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.login-submit-button:hover {
+    background: #000;
+}
+
+.login-submit-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Feedback */
+.login-error,
+.login-message {
+    font-size: 12px;
+    margin: 10px 0;
+}
+
+.login-error {
+    color: #c0392b;
+}
+
+.login-message {
+    color: #29834b;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .login-container {
+        margin-top: 50px;
+        margin-bottom: 55px;
+    }
+
+    .login-breadcrumb {
+        padding-left: 20px;
+    }
+}
