@@ -197,6 +197,37 @@ async function initializeDatabase() {
       )
     `);
 
+
+
+// Saved customer addresses
+await db.query(`
+  CREATE TABLE IF NOT EXISTS user_addresses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    apartment VARCHAR(150) NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(80) NOT NULL DEFAULT 'India',
+    is_default TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_user_addresses_user_id (user_id),
+
+    CONSTRAINT fk_user_addresses_user
+      FOREIGN KEY (user_id)
+      REFERENCES users(id)
+      ON DELETE CASCADE
+  )
+`);
+
+
+
     console.log("Database tables and migrations completed.");
   } catch (error) {
     console.error("Database initialization failed:", error);

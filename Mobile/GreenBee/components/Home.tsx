@@ -36,6 +36,7 @@ import Testimonials from './Testimonials';
 import Ourteam from './Ourteam';
 import NotFound from './NotFound';
 import FavoriteFruits from './FavoriteFruits';
+import OrderHistory from './OrderHistory';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SIDEBAR_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 320);
@@ -60,6 +61,7 @@ const Home: React.FC = () => {
 const [showTestimonials, setShowTestimonials] = useState(false);
 const [showOurTeam, setShowOurTeam] = useState(false);
 const [showNotFound, setShowNotFound] = useState(false);
+const [showOrderHistory, setShowOrderHistory] = useState(false);
   
 
   const insets = useSafeAreaInsets();
@@ -154,6 +156,7 @@ if (pageNavigation[item]) {
   setShowLogin(false);
   setShowRegistration(false);
   setShowCheckout(false);
+  
   setShowCart(false);
   setShowWishlist(false);
   setShowProducts(false);
@@ -271,6 +274,11 @@ if (pageNavigation[item]) {
           setShowProducts(true);
         }}
         />
+
+        ) : showOrderHistory ? (
+  <OrderHistory
+    onBack={() => setShowOrderHistory(false)}
+  />
       ) : showCart ? (
       <Cart
       onContinueShopping={() => {
@@ -386,7 +394,20 @@ if (pageNavigation[item]) {
       >
         <Text style={styles.accountItemText}>My Wishlist</Text>
       </TouchableOpacity>
-
+<TouchableOpacity
+  style={styles.accountItem}
+  onPress={() => {
+    setAccountMenuOpen(false);
+    setShowLogin(false);
+    setShowRegistration(false);
+    setShowCheckout(false);
+    setShowCart(false);
+    setShowWishlist(false);
+    setShowOrderHistory(true);
+  }}
+>
+  <Text style={styles.accountItemText}>My Orders</Text>
+</TouchableOpacity>
       <TouchableOpacity
         style={styles.accountClose}
         onPress={() => setAccountMenuOpen(false)}

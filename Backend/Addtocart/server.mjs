@@ -13,7 +13,8 @@ import {
     authenticateToken,
     authorizeRoles
 } from "./authMiddleware.js";
-import orderRoutes from "./orderRoutes.js"
+import orderRoutes from "./orderRoutes.js";
+import addressRoutes from "./addressRoutes.js";
 
 dotenv.config({ path: new URL("../.env", import.meta.url) });
 
@@ -64,6 +65,7 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
 app.use("/api", orderRoutes);
+app.use("/api", addressRoutes);
 
 // Multer configuration
 const storage = multer.diskStorage({

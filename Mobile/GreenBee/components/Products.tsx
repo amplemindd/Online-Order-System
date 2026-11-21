@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,44 +8,32 @@ import {
   ScrollView,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 
 import { Product, useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
-// Temporary static product data.
-// Later, we will fetch this from the Node.js backend.
-const products: Product[] = [
-  {
-    id: 1,
-    name: 'APPLES',
-    price: 12,
-    image: require('../assets/images/apples-p.jpg'),
-  },
-  {
-    id: 2,
-    name: 'AVOCADOS',
-    price: 20,
-    image: require('../assets/images/avocado.jpg'),
-  },
-  {
-    id: 3,
-    name: 'BANANAS',
-    price: 14,
-    image: require('../assets/images/banana.jpg'),
-  },
-  {
-    id: 4,
-    name: 'BLACKBERRIES',
-    price: 16,
-    image: require('../assets/images/blackberry.jpg'),
-  },
-];
+const API_BASE_URL = 'https://online-order-system-1.onrender.com';
+
+type ApiProduct = {
+  id: number;
+  name: string;
+  price: string | number;
+  image_path: string | null;
+  description?: string;
+  stock?: number;
+  pricing_type?: string;
+  category?: string;
+};
 
 const Products: React.FC = () => {
   const { addToCart, cartCount } = useCart();
-
   const { toggleWishlist, isWishlisted } = useWishlist();
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [selectedProduct, setSelectedProduct] =
     useState<Product | null>(null);
@@ -53,8 +41,79 @@ const Products: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState('Medium');
   const [quantity, setQuantity] = useState(1);
 
+  // Fetch products from backend
+  const fetchProducts = async () => {
+  try {
+    setLoading(true);
+    setError('');
+
+    console.log('API URL:', `${API_BASE_URL}/api/products`);
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/products`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      },
+    );
+
+    console.log('API Status:', response.status);
+
+    const responseText = await response.text();
+
+    console.log('API Response:', responseText);
+
+    if (!response.ok) {
+      throw new Error(
+        `Server Error: ${response.status} - ${responseText}`,
+      );
+    }
+
+    const data = JSON.parse(responseText);
+
+    if (!data.success || !Array.isArray(data.products)) {
+      throw new Error('Invalid products API response.');
+    }
+
+    const formattedProducts: Product[] = data.products.map(
+      (item: ApiProduct) => ({
+        id: item.id,
+        name: item.name,
+        price: Number(item.price),
+        image: item.image_path
+          ? {
+              uri: `${API_BASE_URL}/${item.image_path.replace(/^\/+/, '')}`,
+            }
+          : require('../assets/images/apples-p.jpg'),
+      }),
+    );
+
+    setProducts(formattedProducts);
+  } catch (err) {
+    console.log('PRODUCT API ERROR:', err);
+
+    const errorMessage =
+      err instanceof Error ? err.message : String(err);
+
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // Check whether product is Banana
+  const isBanana = (product: Product) =>
+    product.name.toLowerCase().includes('banana');
+
+  // Add product to cart
   const handleAddToCart = (product: Product) => {
-    if (product.id === 3) {
+    if (isBanana(product)) {
       setSelectedProduct(product);
       setSelectedSize('Medium');
       setQuantity(1);
@@ -62,10 +121,14 @@ const Products: React.FC = () => {
     }
 
     addToCart(product);
-    // Alert.alert('Added to Cart', `${product.name} added successfully!`);
-    Alert.alert('Added to Cart', `${product.name} added successfully!`);
+
+    Alert.alert(
+      'Added to Cart',
+      `${product.name} added successfully!`,
+    );
   };
 
+  // Add Banana with selected size and quantity
   const handleBananaAddToCart = () => {
     if (!selectedProduct) return;
 
@@ -73,12 +136,12 @@ const Products: React.FC = () => {
       addToCart(selectedProduct, selectedSize);
     }
 
-    setSelectedProduct(null);
-
     Alert.alert(
       'Added to Cart',
       `${quantity} ${selectedProduct.name} added successfully!`,
     );
+
+    setSelectedProduct(null);
   };
 
   return (
@@ -87,63 +150,110 @@ const Products: React.FC = () => {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
+      {/* Heading */}
       <View style={styles.headingContainer}>
         <Text style={styles.heading}>OUR PRODUCTS</Text>
+
         <Text style={styles.subheading}>
           Freshness delivered to your doorstep
         </Text>
       </View>
 
+      {/* Cart Information */}
       <View style={styles.cartInfo}>
         <Text style={styles.cartText}>
           Cart Items: {cartCount}
         </Text>
       </View>
 
-      <View style={styles.productGrid}>
-        {products.map(product => {
-          const wishlisted = isWishlisted(product.id);
+      {/* Loading */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#238B45" />
 
-          return (
-            <View style={styles.productCard} key={product.id}>
-              <TouchableOpacity
-                style={styles.heartButton}
-                onPress={() => toggleWishlist(product)}
+          <Text style={styles.loadingText}>
+            Loading products...
+          </Text>
+        </View>
+      )}
+
+      {/* Error */}
+      {!loading && error !== '' && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={fetchProducts}
+          >
+            <Text style={styles.addButtonText}>RETRY</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Product Grid */}
+      {!loading && !error && (
+        <View style={styles.productGrid}>
+          {products.map(product => {
+            const wishlisted = isWishlisted(product.id);
+
+            return (
+              <View
+                style={styles.productCard}
+                key={product.id}
               >
-                <Text style={styles.heart}>
-                  {wishlisted ? '❤️' : '♡'}
+                {/* Wishlist Button */}
+                <TouchableOpacity
+                  style={styles.heartButton}
+                  onPress={() => toggleWishlist(product)}
+                >
+                  <Text style={styles.heart}>
+                    {wishlisted ? '♥' : '♡'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Product Image */}
+                <Image
+                  source={product.image}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
+
+                {/* Product Name */}
+                <Text style={styles.productName}>
+                  {product.name}
                 </Text>
-              </TouchableOpacity>
 
-              <Image
-                source={product.image}
-                style={styles.productImage}
-                resizeMode="cover"
-              />
-
-              <Text style={styles.productName}>
-                {product.name}
-              </Text>
-
-              <Text style={styles.productPrice}>
-                ₹{product.price.toFixed(2)}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.addButton}
-                onPress={() => handleAddToCart(product)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.addButtonText}>
-                  {product.id === 3 ? 'SELECT OPTIONS' : 'ADD TO CART'}
+                {/* Product Price */}
+                <Text style={styles.productPrice}>
+                  ₹{product.price.toFixed(2)}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-      </View>
 
-      {/* Banana size and quantity selection */}
+                {/* Add to Cart */}
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() => handleAddToCart(product)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.addButtonText}>
+                    {isBanana(product)
+                      ? 'SELECT OPTIONS'
+                      : 'ADD TO CART'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+
+          {products.length === 0 && (
+            <Text style={styles.emptyText}>
+              No products available.
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Banana Size and Quantity Modal */}
       <Modal
         visible={selectedProduct !== null}
         transparent
@@ -156,7 +266,10 @@ const Products: React.FC = () => {
               Select Banana Options
             </Text>
 
-            <Text style={styles.modalLabel}>Choose Size</Text>
+            {/* Size Selection */}
+            <Text style={styles.modalLabel}>
+              Choose Size
+            </Text>
 
             <View style={styles.sizeContainer}>
               {['Small', 'Medium', 'Large'].map(size => (
@@ -164,14 +277,16 @@ const Products: React.FC = () => {
                   key={size}
                   style={[
                     styles.sizeButton,
-                    selectedSize === size && styles.selectedSizeButton,
+                    selectedSize === size &&
+                      styles.selectedSizeButton,
                   ]}
                   onPress={() => setSelectedSize(size)}
                 >
                   <Text
                     style={[
                       styles.sizeText,
-                      selectedSize === size && styles.selectedSizeText,
+                      selectedSize === size &&
+                        styles.selectedSizeText,
                     ]}
                   >
                     {size}
@@ -180,38 +295,55 @@ const Products: React.FC = () => {
               ))}
             </View>
 
-            <Text style={styles.modalLabel}>Quantity</Text>
+            {/* Quantity Selection */}
+            <Text style={styles.modalLabel}>
+              Quantity
+            </Text>
 
             <View style={styles.quantityContainer}>
               <TouchableOpacity
                 style={styles.quantityButton}
-                onPress={() => setQuantity(Math.max(1, quantity - 1))}
+                onPress={() =>
+                  setQuantity(Math.max(1, quantity - 1))
+                }
               >
-                <Text style={styles.quantityButtonText}>−</Text>
+                <Text style={styles.quantityButtonText}>
+                  −
+                </Text>
               </TouchableOpacity>
 
-              <Text style={styles.quantityText}>{quantity}</Text>
+              <Text style={styles.quantityText}>
+                {quantity}
+              </Text>
 
               <TouchableOpacity
                 style={styles.quantityButton}
                 onPress={() => setQuantity(quantity + 1)}
               >
-                <Text style={styles.quantityButtonText}>+</Text>
+                <Text style={styles.quantityButtonText}>
+                  +
+                </Text>
               </TouchableOpacity>
             </View>
 
+            {/* Add Banana */}
             <TouchableOpacity
               style={styles.modalAddButton}
               onPress={handleBananaAddToCart}
             >
-              <Text style={styles.addButtonText}>ADD TO CART</Text>
+              <Text style={styles.addButtonText}>
+                ADD TO CART
+              </Text>
             </TouchableOpacity>
 
+            {/* Cancel */}
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => setSelectedProduct(null)}
             >
-              <Text style={styles.cancelText}>CANCEL</Text>
+              <Text style={styles.cancelText}>
+                CANCEL
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -220,6 +352,7 @@ const Products: React.FC = () => {
   );
 };
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -317,6 +450,41 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: 'bold',
+  },
+
+  loadingContainer: {
+    padding: 30,
+    alignItems: 'center',
+  },
+
+  loadingText: {
+    marginTop: 10,
+    color: '#777',
+  },
+
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+
+  retryButton: {
+    backgroundColor: '#238B45',
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+  },
+
+  emptyText: {
+    width: '100%',
+    textAlign: 'center',
+    color: '#777',
+    padding: 20,
   },
 
   modalOverlay: {
