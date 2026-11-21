@@ -13,7 +13,7 @@ import {
     authenticateToken,
     authorizeRoles
 } from "./authMiddleware.js";
-import orderRoutes from "./orderRoutes.js"
+import orderRoutes from "./orderRoutes.js";
 
 dotenv.config({ path: new URL("../.env", import.meta.url) });
 
@@ -31,34 +31,31 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const allowedOrigins = [
-  "https://online-order-system-exotak4fr-amplemind.vercel.app",
-  "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
-  "https://online-order-system-ir33vlojp-amplemind.vercel.app",
-  "https://online-order-system-xi.vercel.app",
-  "https://online-order-system-98rp.onrender.com",
-  "http://localhost:3000"
+    "https://online-order-system-exotak4fr-amplemind.vercel.app",
+    "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
+    "https://online-order-system-ir33vlojp-amplemind.vercel.app",
+    "https://online-order-system-xi.vercel.app",
+    "https://online-order-system-98rp.onrender.com",
+    "http://localhost:3000"
 ];
 
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests without an Origin header, such as server-to-server requests.
-    if (!origin) return callback(null, true);
+    origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
 
-    // Allow explicitly listed origins and this project's Vercel preview deployments.
-    const isAllowed =
-      allowedOrigins.includes(origin) ||
-      /^https:\/\/online-order-system-[a-z0-9]+-amplemind\.vercel\.app$/.test(origin);
+        const isAllowed =
+            allowedOrigins.includes(origin) ||
+            /^https:\/\/online-order-system-[a-z0-9]+-amplemind\.vercel\.app$/.test(origin);
 
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS blocked origin: ${origin}`));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS blocked origin: ${origin}`));
+        }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
 
 // Middleware
 app.use(express.json());
@@ -193,8 +190,6 @@ app.get("/api/cart", async (req, res) => {
     }
 });
 
-// GET all products from MySQL
-
 // GET all products with category names
 app.get("/api/products", async (req, res) => {
     try {
@@ -226,261 +221,256 @@ app.get("/api/products", async (req, res) => {
     }
 });
 
-
+// Add product
 app.post(
-  "/api/products",
-  authenticateToken,
-  authorizeRoles("admin"),
-  upload.single("image"),
-  async (req, res) => {
-    try {
-      const {
-        name,
-        category,
-        price,
-        stock,
-        pricingType,
-        description,
-      } = req.body;
+    "/api/products",
+    authenticateToken,
+    authorizeRoles("admin"),
+    upload.single("image"),
+    async (req, res) => {
+        try {
+            const {
+                name,
+                category,
+                price,
+                stock,
+                pricingType,
+                description,
+            } = req.body;
 
-      if (!name?.trim() || !category?.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: "Product name and category are required.",
-        });
-      }
+            if (!name?.trim() || !category?.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Product name and category are required.",
+                });
+            }
 
-      const parsedPrice = Number(price);
-      const parsedStock = Number(stock ?? 0);
+            const parsedPrice = Number(price);
+            const parsedStock = Number(stock ?? 0);
 
-      if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Enter a valid product price.",
-        });
-      }
+            if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter a valid product price.",
+                });
+            }
 
-      if (
-        !Number.isInteger(parsedStock) ||
-        parsedStock < 0
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "Stock must be a non-negative whole number.",
-        });
-      }
+            if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Stock must be a non-negative whole number.",
+                });
+            }
 
-      const allowedPricingTypes = [
-        "Per Kg",
-        "Per Piece",
-        "Per Litre",
-        "Per Pack",
-      ];
+            const allowedPricingTypes = [
+                "Per Kg",
+                "Per Piece",
+                "Per Litre",
+                "Per Pack",
+            ];
 
-      const selectedPricingType = pricingType || "Per Kg";
+            const selectedPricingType = pricingType || "Per Kg";
 
-      if (!allowedPricingTypes.includes(selectedPricingType)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid pricing type.",
-        });
-      }
+            if (!allowedPricingTypes.includes(selectedPricingType)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid pricing type.",
+                });
+            }
 
-      // Find existing category or create a new one
-      const [existingCategories] = await db.query(
-        "SELECT id FROM categories WHERE name = ?",
-        [category.trim()]
-      );
+            const [existingCategories] = await db.query(
+                "SELECT id FROM categories WHERE name = ?",
+                [category.trim()]
+            );
 
-      let categoryId;
+            let categoryId;
 
-      if (existingCategories.length > 0) {
-        categoryId = existingCategories[0].id;
-      } else {
-        const [categoryResult] = await db.query(
-          "INSERT INTO categories (name) VALUES (?)",
-          [category.trim()]
-        );
+            if (existingCategories.length > 0) {
+                categoryId = existingCategories[0].id;
+            } else {
+                const [categoryResult] = await db.query(
+                    "INSERT INTO categories (name) VALUES (?)",
+                    [category.trim()]
+                );
 
-        categoryId = categoryResult.insertId;
-      }
+                categoryId = categoryResult.insertId;
+            }
 
-      const imagePath = req.file
-        ? `uploads/${req.file.filename}`
-        : null;
+            const imagePath = req.file
+                ? `uploads/${req.file.filename}`
+                : null;
 
-      const [result] = await db.query(
-        `INSERT INTO products
-          (category_id, name, price, image_path, description, stock, pricing_type)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          categoryId,
-          name.trim(),
-          parsedPrice,
-          imagePath,
-          description || "",
-          parsedStock,
-          selectedPricingType,
-        ]
-      );
+            const [result] = await db.query(
+                `INSERT INTO products
+                (category_id, name, price, image_path, description, stock, pricing_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    categoryId,
+                    name.trim(),
+                    parsedPrice,
+                    imagePath,
+                    description || "",
+                    parsedStock,
+                    selectedPricingType,
+                ]
+            );
 
-      res.status(201).json({
-        success: true,
-        message: "Product added successfully.",
-        productId: result.insertId,
-      });
-    } catch (error) {
-      console.error("Add product error:", error);
+            res.status(201).json({
+                success: true,
+                message: "Product added successfully.",
+                productId: result.insertId,
+            });
+        } catch (error) {
+            console.error("Add product error:", error);
 
-      res.status(500).json({
-        success: false,
-        message: "Failed to add product.",
-      });
+            res.status(500).json({
+                success: false,
+                message: "Failed to add product.",
+            });
+        }
     }
-  }
 );
 
+// Delete product
 app.delete(
-  "/api/products/:id",
-  authenticateToken,
-  authorizeRoles("admin"),
-  async (req, res) => {
-    try {
-      const productId = Number(req.params.id);
+    "/api/products/:id",
+    authenticateToken,
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const productId = Number(req.params.id);
 
-      if (!Number.isInteger(productId) || productId <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid product ID.",
-        });
-      }
+            if (!Number.isInteger(productId) || productId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid product ID.",
+                });
+            }
 
-      const [existing] = await db.query(
-        "SELECT id FROM products WHERE id = ?",
-        [productId]
-      );
+            const [existing] = await db.query(
+                "SELECT id FROM products WHERE id = ?",
+                [productId]
+            );
 
-      if (!existing.length) {
-        return res.status(404).json({
-          success: false,
-          message: "Product not found.",
-        });
-      }
+            if (!existing.length) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Product not found.",
+                });
+            }
 
-      // Keep products referenced by previous orders
-      const [usedInOrders] = await db.query(
-        "SELECT id FROM order_items WHERE product_id = ? LIMIT 1",
-        [productId]
-      );
+            const [usedInOrders] = await db.query(
+                "SELECT id FROM order_items WHERE product_id = ? LIMIT 1",
+                [productId]
+            );
 
-      if (usedInOrders.length) {
-        return res.status(409).json({
-          success: false,
-          message:
-            "This product is part of an existing order and cannot be deleted.",
-        });
-      }
+            if (usedInOrders.length) {
+                return res.status(409).json({
+                    success: false,
+                    message:
+                        "This product is part of an existing order and cannot be deleted.",
+                });
+            }
 
-      await db.query("DELETE FROM products WHERE id = ?", [productId]);
+            await db.query("DELETE FROM products WHERE id = ?", [productId]);
 
-      res.json({
-        success: true,
-        message: "Product deleted successfully.",
-      });
-    } catch (error) {
-      console.error("Delete product error:", error);
+            res.json({
+                success: true,
+                message: "Product deleted successfully.",
+            });
+        } catch (error) {
+            console.error("Delete product error:", error);
 
-      res.status(500).json({
-        success: false,
-        message: "Failed to delete product.",
-      });
+            res.status(500).json({
+                success: false,
+                message: "Failed to delete product.",
+            });
+        }
     }
-  }
 );
 
-
+// Admin dashboard statistics
 app.get(
-  "/api/admin/dashboard-stats",
-  authenticateToken,
-  authorizeRoles("admin"),
-  async (req, res) => {
-    try {
-      const [[productStats]] = await db.query(`
-        SELECT COUNT(*) AS totalProducts
-        FROM products
-      `);
+    "/api/admin/dashboard-stats",
+    authenticateToken,
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const [[productStats]] = await db.query(`
+                SELECT COUNT(*) AS totalProducts
+                FROM products
+            `);
 
-      const [[orderStats]] = await db.query(`
-        SELECT
-          COUNT(*) AS totalOrders,
-          COALESCE(
-            SUM(
-              CASE
-                WHEN payment_status = 'paid' OR status = 'paid'
-                THEN total_amount
-                ELSE 0
-              END
-            ),
-            0
-          ) AS totalRevenue
-        FROM orders
-      `);
+            const [[orderStats]] = await db.query(`
+                SELECT
+                    COUNT(*) AS totalOrders,
+                    COALESCE(
+                        SUM(
+                            CASE
+                                WHEN payment_status = 'paid' OR status = 'paid'
+                                THEN total_amount
+                                ELSE 0
+                            END
+                        ),
+                        0
+                    ) AS totalRevenue
+                FROM orders
+            `);
 
-      const [[customerStats]] = await db.query(`
-        SELECT COUNT(*) AS totalCustomers
-        FROM users
-        WHERE role = 'user'
-      `);
+            const [[customerStats]] = await db.query(`
+                SELECT COUNT(*) AS totalCustomers
+                FROM users
+                WHERE role = 'user'
+            `);
 
-      const [recentOrders] = await db.query(`
-        SELECT
-          id,
-          customer_name,
-          total_amount,
-          status,
-          payment_status,
-          created_at
-        FROM orders
-        ORDER BY created_at DESC
-        LIMIT 5
-      `);
+            const [recentOrders] = await db.query(`
+                SELECT
+                    id,
+                    customer_name,
+                    total_amount,
+                    status,
+                    payment_status,
+                    created_at
+                FROM orders
+                ORDER BY created_at DESC
+                LIMIT 5
+            `);
 
-      const [topProducts] = await db.query(`
-        SELECT
-          p.id,
-          p.name,
-          p.price,
-          p.image_path,
-          COALESCE(SUM(oi.quantity), 0) AS total_sold
-        FROM products p
-        LEFT JOIN order_items oi ON oi.product_id = p.id
-        LEFT JOIN orders o ON o.id = oi.order_id
-          AND (o.payment_status = 'paid' OR o.status = 'paid')
-        GROUP BY p.id, p.name, p.price, p.image_path
-        ORDER BY total_sold DESC
-        LIMIT 5
-      `);
+            const [topProducts] = await db.query(`
+                SELECT
+                    p.id,
+                    p.name,
+                    p.price,
+                    p.image_path,
+                    COALESCE(SUM(oi.quantity), 0) AS total_sold
+                FROM products p
+                LEFT JOIN order_items oi ON oi.product_id = p.id
+                LEFT JOIN orders o ON o.id = oi.order_id
+                    AND (o.payment_status = 'paid' OR o.status = 'paid')
+                GROUP BY p.id, p.name, p.price, p.image_path
+                ORDER BY total_sold DESC
+                LIMIT 5
+            `);
 
-      res.json({
-        success: true,
-        totalProducts: Number(productStats.totalProducts),
-        totalOrders: Number(orderStats.totalOrders),
-        totalCustomers: Number(customerStats.totalCustomers),
-        totalRevenue: Number(orderStats.totalRevenue),
-        recentOrders,
-        topProducts,
-      });
-    } catch (error) {
-      console.error("Dashboard stats error:", error);
+            res.json({
+                success: true,
+                totalProducts: Number(productStats.totalProducts),
+                totalOrders: Number(orderStats.totalOrders),
+                totalCustomers: Number(customerStats.totalCustomers),
+                totalRevenue: Number(orderStats.totalRevenue),
+                recentOrders,
+                topProducts,
+            });
+        } catch (error) {
+            console.error("Dashboard stats error:", error);
 
-      res.status(500).json({
-        success: false,
-        message: "Failed to load dashboard statistics.",
-      });
+            res.status(500).json({
+                success: false,
+                message: "Failed to load dashboard statistics.",
+            });
+        }
     }
-  }
 );
-
 
 // USER REGISTRATION API
 app.post("/api/register", async (req, res) => {
@@ -489,22 +479,22 @@ app.post("/api/register", async (req, res) => {
             first_name,
             last_name,
             email,
+            phone,
             password
         } = req.body;
 
         const firstName = (first_name || "").trim();
         const lastName = (last_name || "").trim();
         const cleanEmail = (email || "").trim().toLowerCase();
+        const cleanPhone = (phone || "").trim();
 
-        // Required field validation
-        if (!firstName || !lastName || !cleanEmail || !password) {
+        if (!firstName || !lastName || !cleanEmail || !cleanPhone || !password) {
             return res.status(400).json({
                 success: false,
                 message: "Please fill all required fields."
             });
         }
 
-        // Name validation
         if (
             !/^[A-Za-z ]+$/.test(firstName) ||
             !/^[A-Za-z ]+$/.test(lastName)
@@ -515,7 +505,6 @@ app.post("/api/register", async (req, res) => {
             });
         }
 
-        // Email validation
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
             return res.status(400).json({
                 success: false,
@@ -523,7 +512,13 @@ app.post("/api/register", async (req, res) => {
             });
         }
 
-        // Password validation
+        if (!/^[0-9]{10}$/.test(cleanPhone)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid 10-digit phone number."
+            });
+        }
+
         if (typeof password !== "string" || password.length < 8) {
             return res.status(400).json({
                 success: false,
@@ -531,15 +526,13 @@ app.post("/api/register", async (req, res) => {
             });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insert user
         const [result] = await db.execute(
             `INSERT INTO users
-            (first_name, last_name, email, password)
-            VALUES (?, ?, ?, ?)`,
-            [firstName, lastName, cleanEmail, hashedPassword]
+            (first_name, last_name, email, phone, password)
+            VALUES (?, ?, ?, ?, ?)`,
+            [firstName, lastName, cleanEmail, cleanPhone, hashedPassword]
         );
 
         return res.status(201).json({
@@ -572,7 +565,6 @@ app.post("/api/login", async (req, res) => {
 
         const cleanEmail = (email || "").trim().toLowerCase();
 
-        // Validate input
         if (!cleanEmail || !password) {
             return res.status(400).json({
                 success: false,
@@ -580,7 +572,6 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        // Check JWT configuration
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET is missing from environment.");
             return res.status(500).json({
@@ -589,7 +580,6 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        // Find user
         const [users] = await db.execute(
             `SELECT id, first_name, last_name, email, password, role
              FROM users
@@ -607,7 +597,6 @@ app.post("/api/login", async (req, res) => {
 
         const user = users[0];
 
-        // Verify password
         const passwordMatch = await bcrypt.compare(
             password,
             user.password
@@ -620,7 +609,6 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        // Generate JWT
         const token = jwt.sign(
             {
                 userId: user.id,
@@ -655,7 +643,6 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
-
 // GET LOGGED-IN USER PROFILE
 app.get("/api/user/profile", authenticateToken, async (req, res) => {
     try {
@@ -688,8 +675,6 @@ app.get("/api/user/profile", authenticateToken, async (req, res) => {
         });
     }
 });
-
-
 
 // Return JSON for any unhandled errors
 app.use((error, req, res, next) => {
