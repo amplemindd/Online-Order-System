@@ -1,0 +1,87 @@
+
+.account-page {
+    min-height: 500px;
+    color: #222;
+}
+
+.account-breadcrumb {
+    height: 70px;
+    background: #efefef;
+    display: flex;
+    align-items: center;
+    padding: 0 max(calc((100% - 1166px) / 2), 25px);
+    gap: 10px;
+    font-size: 11px;
+    color: #888;
+}
+
+.account-breadcrumb a {
+    color: #888;
+    text-decoration: none;
+}
+
+.account-container {
+    width: 570px;
+    max-width: calc(100% - 40px);
+    margin: 65px auto;
+}
+
+.account-heading {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.account-heading h2 {
+    font-size: 20px;
+    margin: 0 0 10px;
+}
+
+.account-heading p {
+    font-size: 13px;
+    color: #777;
+}
+
+.account-profile {
+    border: 1px solid #eee;
+    padding: 22px;
+}
+
+.account-profile h3 {
+    font-size: 16px;
+    margin: 0 0 20px;
+}
+
+.account-detail {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 13px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+}
+
+.account-detail span {
+    color: #888;
+}
+
+.account-detail strong {
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+.account-logout-button {
+    margin-top: 22px;
+    padding: 13px 25px;
+    background: #222;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+@media (max-width: 600px) {
+    .account-container {
+        margin: 40px auto;
+    }
+}
