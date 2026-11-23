@@ -6,6 +6,8 @@
 
 .account-breadcrumb {
     height: 70px;
+    background: #eee;
+
     background: #efefef;
     display: flex;
     align-items: center;

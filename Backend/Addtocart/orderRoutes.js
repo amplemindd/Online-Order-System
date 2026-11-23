@@ -279,6 +279,97 @@ router.post("/payments/razorpay/verify", authenticateToken, async (req, res) => 
   }
 });
 
+// CUSTOMER: Get logged-in user's orders
+router.get("/orders/my-orders", authenticateToken, async (req, res) => {
+  try {
+    const [orders] = await db.execute(
+      `SELECT
+        id,
+        total_amount,
+        status,
+        payment_status,
+        payment_method,
+        currency,
+        created_at,
+        address,
+        apartment,
+        city,
+        state,
+        postal_code,
+        country
+       FROM orders
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+
+    return res.json({ success: true, orders });
+  } catch (error) {
+    console.error("Customer orders fetch error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch your orders."
+    });
+  }
+});
+
+
+// CUSTOMER: Get details of one of their orders
+router.get("/orders/my-orders/:id", authenticateToken, async (req, res) => {
+  try {
+    const orderId = Number(req.params.id);
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID."
+      });
+    }
+
+    const [orders] = await db.execute(
+      `SELECT *
+       FROM orders
+       WHERE id = ? AND user_id = ?`,
+      [orderId, req.user.id]
+    );
+
+    if (!orders.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found."
+      });
+    }
+
+    const [items] = await db.execute(
+      `SELECT
+        oi.product_id,
+        COALESCE(oi.product_name, p.name) AS product_name,
+        oi.quantity,
+        oi.price,
+        oi.subtotal,
+        oi.product_size,
+        oi.product_color,
+        COALESCE(oi.image_path, p.image_path) AS image_path
+       FROM order_items oi
+       LEFT JOIN products p ON p.id = oi.product_id
+       WHERE oi.order_id = ?`,
+      [orderId]
+    );
+
+    return res.json({
+      success: true,
+      order: orders[0],
+      items
+    });
+  } catch (error) {
+    console.error("Customer order detail error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch order details."
+    });
+  }
+});
+
 router.get("/admin/orders", authenticateToken, authorizeRoles("admin"), async (req, res) => {
   try {
     const [orders] = await db.query(

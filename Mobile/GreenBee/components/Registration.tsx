@@ -35,7 +35,7 @@ interface RegistrationProps {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     const first = firstName.trim();
     const last = lastName.trim();
     const emailValue = email.trim().toLowerCase();
@@ -98,34 +98,40 @@ interface RegistrationProps {
 
     setLoading(true);
 
-    // Demo only: no account is saved to a database.
-    setTimeout(() => {
-      setLoading(false);
+try {
+  const response = await fetch(
+    'https://online-order-system-1.onrender.com/api/register',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        first_name: first,
+        last_name: last,
+        email: emailValue,
+        phone: phone.trim(),
+        password,
+      }),
+    }
+  );
 
-      Alert.alert(
-        'Demo Registration Successful',
-        `Welcome, ${first} ${last}!\nThis is only a demo. No account has been saved.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setFirstName('');
-              setLastName('');
-              setEmail('');
-              setPhone('');
-              setPassword('');
-              setNewsletter(false);
+  const data = await response.json();
 
-              setFirstNameError('');
-              setLastNameError('');
-              setEmailError('');
-              setPhoneError('');
-              setPasswordError('');
-            },
-          },
-        ],
-      );
-    }, 500);
+  if (!response.ok) {
+    Alert.alert('Registration Failed', data.message || 'Please try again.');
+    return;
+  }
+
+  Alert.alert('Success', 'Account created successfully!', [
+    { text: 'Login Now', onPress: onLoginPress },
+  ]);
+
+} catch (error) {
+  Alert.alert('Connection Error', 'Unable to connect to the server.');
+} finally {
+  setLoading(false);
+}
   };
 
   const renderField = (

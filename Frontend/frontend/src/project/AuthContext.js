@@ -11,6 +11,7 @@ const API_URL =
   process.env.REACT_APP_API_URL || "http://localhost:5000";
   console.log("PRODUCTION API URL:", API_URL);
 
+
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(
     () => localStorage.getItem("token")
@@ -26,7 +27,8 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  
+
+
   // LOGIN
   const login = async (email, password) => {
     const response = await fetch(`${API_URL}/api/login`, {
