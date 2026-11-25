@@ -14,9 +14,7 @@ import {
     authorizeRoles
 } from "./authMiddleware.js";
 import orderRoutes from "./orderRoutes.js";
-
 import addressRoutes from "./addressRoutes.js";
-
 
 dotenv.config({ path: new URL("../.env", import.meta.url) });
 
@@ -33,6 +31,7 @@ if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+// Allowed frontend origins
 const allowedOrigins = [
     "https://online-order-system-exotak4fr-amplemind.vercel.app",
     "https://online-order-system-qxpz0c4ip-amplemind.vercel.app",
@@ -95,6 +94,27 @@ const upload = multer({
 // Home route
 app.get("/", (req, res) => {
     res.send("Backend is running successfully!");
+});
+
+// Check the exact database and products-table columns used by this backend.
+app.get("/api/check-database", async (req, res) => {
+    try {
+        const [databaseRows] = await db.query("SELECT DATABASE() AS database_name");
+        const [columns] = await db.query("SHOW COLUMNS FROM products");
+
+        return res.json({
+            success: true,
+            database: databaseRows[0]?.database_name || null,
+            productColumns: columns.map((column) => column.Field)
+        });
+    } catch (error) {
+        console.error("Database diagnostic error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Unable to inspect the connected database.",
+            error: error.message
+        });
+    }
 });
 
 // Test database connection
@@ -200,10 +220,27 @@ app.get("/api/products", async (req, res) => {
         const [products] = await db.query(`
             SELECT
                 p.*,
-                c.name AS category
+                c.name AS category,
+                p.image_path AS image_url,
+                p.pricing_type AS pricingType,
+
+                (COALESCE(p.mrp, p.price) - p.price)
+                AS discount_amount,
+
+                CASE
+                    WHEN COALESCE(p.mrp, 0) > 0
+                    THEN ROUND(
+                        ((p.mrp - p.price) / p.mrp) * 100,
+                        0
+                    )
+                    ELSE 0
+                END AS discount_percentage
+
             FROM products p
+
             LEFT JOIN categories c
                 ON p.category_id = c.id
+
             ORDER BY p.id DESC
         `);
 
@@ -219,50 +256,74 @@ app.get("/api/products", async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: "Failed to fetch products from database.",
+            message: "Failed to fetch products.",
             error: error.message
         });
     }
 });
 
-// Add product
+// ADD PRODUCT
 app.post(
     "/api/products",
     authenticateToken,
     authorizeRoles("admin"),
-    upload.single("image"),
+    upload.fields([
+        { name: "image", maxCount: 1 },
+        { name: "image2", maxCount: 1 },
+        { name: "image3", maxCount: 1 }
+    ]),
     async (req, res) => {
         try {
             const {
                 name,
                 category,
                 price,
+                mrp,
                 stock,
                 pricingType,
                 description,
+                goodFor,
+                topNutrients,
+                netQuantity,
+                shelfLife
             } = req.body;
 
             if (!name?.trim() || !category?.trim()) {
                 return res.status(400).json({
                     success: false,
-                    message: "Product name and category are required.",
+                    message: "Product name and category are required."
                 });
             }
 
-            const parsedPrice = Number(price);
+            const currentPrice = Number(price);
+            const mrpPrice = Number(mrp);
             const parsedStock = Number(stock ?? 0);
 
-            if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+            if (!Number.isFinite(currentPrice) || currentPrice <= 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Enter a valid product price.",
+                    message: "Enter a valid current price."
+                });
+            }
+
+            if (!Number.isFinite(mrpPrice) || mrpPrice <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter a valid MRP."
+                });
+            }
+
+            if (mrpPrice < currentPrice) {
+                return res.status(400).json({
+                    success: false,
+                    message: "MRP cannot be less than current price."
                 });
             }
 
             if (!Number.isInteger(parsedStock) || parsedStock < 0) {
                 return res.status(400).json({
                     success: false,
-                    message: "Stock must be a non-negative whole number.",
+                    message: "Stock must be a non-negative whole number."
                 });
             }
 
@@ -270,7 +331,7 @@ app.post(
                 "Per Kg",
                 "Per Piece",
                 "Per Litre",
-                "Per Pack",
+                "Per Pack"
             ];
 
             const selectedPricingType = pricingType || "Per Kg";
@@ -278,10 +339,11 @@ app.post(
             if (!allowedPricingTypes.includes(selectedPricingType)) {
                 return res.status(400).json({
                     success: false,
-                    message: "Invalid pricing type.",
+                    message: "Invalid pricing type."
                 });
             }
 
+            // Get or create category
             const [existingCategories] = await db.query(
                 "SELECT id FROM categories WHERE name = ?",
                 [category.trim()]
@@ -300,22 +362,58 @@ app.post(
                 categoryId = categoryResult.insertId;
             }
 
-            const imagePath = req.file
-                ? `uploads/${req.file.filename}`
+            // Get uploaded image paths
+            const files = req.files || {};
+
+            const coverImage = files.image?.[0]
+                ? `uploads/${files.image[0].filename}`
                 : null;
 
+            const image2 = files.image2?.[0]
+                ? `uploads/${files.image2[0].filename}`
+                : null;
+
+            const image3 = files.image3?.[0]
+                ? `uploads/${files.image3[0].filename}`
+                : null;
+
+            // Save product
             const [result] = await db.query(
                 `INSERT INTO products
-                (category_id, name, price, image_path, description, stock, pricing_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                (
+                    category_id,
+                    category,
+                    name,
+                    price,
+                    mrp,
+                    image_path,
+                    image_2,
+                    image_3,
+                    description,
+                    stock,
+                    pricingType,
+                    good_for,
+                    top_nutrients,
+                    net_quantity,
+                    shelf_life
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     categoryId,
+                    category.trim(),
                     name.trim(),
-                    parsedPrice,
-                    imagePath,
+                    currentPrice,
+                    mrpPrice,
+                    coverImage,
+                    image2,
+                    image3,
                     description || "",
                     parsedStock,
                     selectedPricingType,
+                    goodFor || "",
+                    topNutrients || "",
+                    netQuantity || "",
+                    shelfLife || ""
                 ]
             );
 
@@ -323,17 +421,211 @@ app.post(
                 success: true,
                 message: "Product added successfully.",
                 productId: result.insertId,
+                discount: {
+                    amount: Number((mrpPrice - currentPrice).toFixed(2)),
+                    percentage: Math.round(
+                        ((mrpPrice - currentPrice) / mrpPrice) * 100
+                    )
+                }
             });
+
         } catch (error) {
             console.error("Add product error:", error);
 
             res.status(500).json({
                 success: false,
                 message: "Failed to add product.",
+                error: error.message
             });
         }
     }
 );
+
+
+// UPDATE PRODUCT
+app.put(
+    "/api/products/:id",
+    authenticateToken,
+    authorizeRoles("admin"),
+    upload.fields([
+        { name: "image", maxCount: 1 },
+        { name: "image2", maxCount: 1 },
+        { name: "image3", maxCount: 1 }
+    ]),
+    async (req, res) => {
+        try {
+            const productId = Number(req.params.id);
+
+            if (!Number.isInteger(productId) || productId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid product ID."
+                });
+            }
+
+            const {
+                name,
+                category,
+                price,
+                mrp,
+                stock,
+                pricingType,
+                description,
+                goodFor,
+                topNutrients,
+                netQuantity,
+                shelfLife
+            } = req.body;
+
+            if (!name?.trim() || !category?.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Product name and category are required."
+                });
+            }
+
+            const currentPrice = Number(price);
+            const mrpPrice = Number(mrp);
+            const parsedStock = Number(stock ?? 0);
+
+            if (
+                !Number.isFinite(currentPrice) ||
+                currentPrice <= 0 ||
+                !Number.isFinite(mrpPrice) ||
+                mrpPrice <= 0 ||
+                mrpPrice < currentPrice
+            ) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter valid MRP and current price. MRP cannot be less than current price."
+                });
+            }
+
+            if (!Number.isInteger(parsedStock) || parsedStock < 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Stock must be a non-negative whole number."
+                });
+            }
+
+            const allowedPricingTypes = [
+                "Per Kg",
+                "Per Piece",
+                "Per Litre",
+                "Per Pack"
+            ];
+
+            const selectedPricingType = pricingType || "Per Kg";
+
+            if (!allowedPricingTypes.includes(selectedPricingType)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid pricing type."
+                });
+            }
+
+            const [existingProducts] = await db.query(
+    `SELECT id, image_path, image_2, image_3
+     FROM products
+     WHERE id = ?`,
+    [productId]
+);
+
+            if (existingProducts.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Product not found."
+                });
+            }
+
+            // Get or create category
+            const [existingCategories] = await db.query(
+                "SELECT id FROM categories WHERE name = ?",
+                [category.trim()]
+            );
+
+            let categoryId;
+
+            if (existingCategories.length > 0) {
+                categoryId = existingCategories[0].id;
+            } else {
+                const [categoryResult] = await db.query(
+                    "INSERT INTO categories (name) VALUES (?)",
+                    [category.trim()]
+                );
+
+                categoryId = categoryResult.insertId;
+            }
+
+            const oldProduct = existingProducts[0];
+const files = req.files || {};
+
+const coverImage = files.image?.[0]
+    ? `uploads/${files.image[0].filename}`
+    : oldProduct.image_path;
+
+const image2 = files.image2?.[0]
+    ? `uploads/${files.image2[0].filename}`
+    : oldProduct.image_2;
+
+const image3 = files.image3?.[0]
+    ? `uploads/${files.image3[0].filename}`
+    : oldProduct.image_3;
+
+            await db.query(
+    `UPDATE products SET
+        category_id = ?,
+        name = ?,
+        price = ?,
+        mrp = ?,
+        image_path = ?,
+        image_2 = ?,
+        image_3 = ?,
+        description = ?,
+        stock = ?,
+        pricing_type = ?,
+        good_for = ?,
+        top_nutrients = ?,
+        net_quantity = ?,
+        shelf_life = ?
+     WHERE id = ?`,
+    [
+        categoryId,
+        name.trim(),
+        currentPrice,
+        mrpPrice,
+        coverImage,
+        image2,
+        image3,
+        description || "",
+        parsedStock,
+        selectedPricingType,
+        goodFor || "",
+        topNutrients || "",
+        netQuantity || "",
+        shelfLife || "",
+        productId
+    ]
+);
+
+            res.status(200).json({
+                success: true,
+                message: "Product updated successfully.",
+                productId
+            });
+
+        } catch (error) {
+            console.error("Update product error:", error);
+
+            res.status(500).json({
+                success: false,
+                message: "Failed to update product.",
+                error: error.message
+            });
+        }
+    }
+);
+
 
 // Delete product
 app.delete(
@@ -393,6 +685,74 @@ app.delete(
     }
 );
 
+// Update product availability
+app.put(
+    "/api/products/:id/status",
+    authenticateToken,
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const productId = Number(req.params.id);
+            const { is_active } = req.body;
+
+            if (!Number.isInteger(productId) || productId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid product ID"
+                });
+            }
+
+            if (![0, 1].includes(Number(is_active))) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid status"
+                });
+            }
+
+            // Check whether the optional availability column exists in this database.
+            const [statusColumns] = await db.query("SHOW COLUMNS FROM products LIKE 'is_active'");
+
+            if (statusColumns.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Product status is not configured. Run: ALTER TABLE products ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1;"
+                });
+            }
+
+            const [result] = await db.query(
+                "UPDATE products SET is_active = ? WHERE id = ?",
+                [Number(is_active), productId]
+            );
+
+            if (result.affectedRows === 0) {
+                const [existingProduct] = await db.query(
+                    "SELECT id FROM products WHERE id = ?",
+                    [productId]
+                );
+
+                if (existingProduct.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Product not found"
+                    });
+                }
+            }
+
+            res.json({
+                success: true,
+                message: "Product availability updated"
+            });
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to update availability"
+            });
+        }
+    }
+);
+
 // Admin dashboard statistics
 app.get(
     "/api/admin/dashboard-stats",
@@ -400,6 +760,10 @@ app.get(
     authorizeRoles("admin"),
     async (req, res) => {
         try {
+            const period = ["week", "month", "year"].includes(req.query.period)
+                ? req.query.period
+                : "month";
+
             const [[productStats]] = await db.query(`
                 SELECT COUNT(*) AS totalProducts
                 FROM products
@@ -411,7 +775,7 @@ app.get(
                     COALESCE(
                         SUM(
                             CASE
-                                WHEN payment_status = 'paid' OR status = 'paid'
+                                WHEN LOWER(COALESCE(payment_status, '')) = 'paid'
                                 THEN total_amount
                                 ELSE 0
                             END
@@ -440,20 +804,82 @@ app.get(
                 LIMIT 5
             `);
 
+            // Count orders by their actual status
+            const [orderStatusRows] = await db.query(`
+                SELECT
+                    LOWER(COALESCE(status, 'pending')) AS status,
+                    COUNT(*) AS total
+                FROM orders
+                GROUP BY LOWER(COALESCE(status, 'pending'))
+            `);
+
+            const orderStatusCounts = {};
+            orderStatusRows.forEach((row) => {
+                orderStatusCounts[row.status] = Number(row.total);
+            });
+
+            // Select date range and grouping for sales chart
+            let dateCondition;
+            let labelFormat;
+            let groupExpression;
+
+            if (period === "week") {
+                dateCondition = `
+                    created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+                    AND created_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+                `;
+                labelFormat = "%a";
+                groupExpression = "DATE(created_at)";
+            } else if (period === "year") {
+                dateCondition = `
+                    created_at >= MAKEDATE(YEAR(CURDATE()), 1)
+                    AND created_at < MAKEDATE(YEAR(CURDATE()) + 1, 1)
+                `;
+                labelFormat = "%b";
+                groupExpression = "YEAR(created_at), MONTH(created_at)";
+            } else {
+                dateCondition = `
+                    created_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+                    AND created_at < DATE_ADD(
+                        LAST_DAY(CURDATE()),
+                        INTERVAL 1 DAY
+                    )
+                `;
+                labelFormat = "%d";
+                groupExpression = "DATE(created_at)";
+            }
+
+            const [salesOverview] = await db.query(`
+                SELECT
+                    DATE_FORMAT(MIN(created_at), '${labelFormat}') AS label,
+                    COALESCE(SUM(total_amount), 0) AS revenue
+                FROM orders
+                WHERE LOWER(COALESCE(payment_status, '')) = 'paid'
+                    AND ${dateCondition}
+                GROUP BY ${groupExpression}
+                ORDER BY MIN(created_at) ASC
+            `);
+
+            // Only count products from paid orders
             const [topProducts] = await db.query(`
                 SELECT
-                    p.id,
-                    p.name,
-                    p.price,
-                    p.image_path,
-                    COALESCE(SUM(oi.quantity), 0) AS total_sold
-                FROM products p
-                LEFT JOIN order_items oi ON oi.product_id = p.id
-                LEFT JOIN orders o ON o.id = oi.order_id
-                    AND (o.payment_status = 'paid' OR o.status = 'paid')
-                GROUP BY p.id, p.name, p.price, p.image_path
-                ORDER BY total_sold DESC
-                LIMIT 5
+    p.id,
+    p.name,
+    p.price,
+    p.image_path,
+    COALESCE(sold.total_sold, 0) AS total_sold
+FROM products p
+LEFT JOIN (
+    SELECT
+        oi.product_id,
+        SUM(oi.quantity) AS total_sold
+    FROM order_items oi
+    INNER JOIN orders o ON o.id = oi.order_id
+    WHERE LOWER(COALESCE(o.payment_status, '')) = 'paid'
+    GROUP BY oi.product_id
+) sold ON sold.product_id = p.id
+ORDER BY total_sold DESC
+LIMIT 5
             `);
 
             res.json({
@@ -464,6 +890,11 @@ app.get(
                 totalRevenue: Number(orderStats.totalRevenue),
                 recentOrders,
                 topProducts,
+                orderStatusCounts,
+                salesOverview: salesOverview.map((item) => ({
+                    label: item.label,
+                    revenue: Number(item.revenue),
+                })),
             });
         } catch (error) {
             console.error("Dashboard stats error:", error);
@@ -471,6 +902,288 @@ app.get(
             res.status(500).json({
                 success: false,
                 message: "Failed to load dashboard statistics.",
+            });
+        }
+    }
+);
+
+// ==========================================
+// CATEGORY MANAGEMENT APIs
+// ==========================================
+
+// GET all categories with product count and image
+app.get("/api/categories", async (req, res) => {
+    try {
+        const [categories] = await db.query(`
+            SELECT
+                c.id,
+                c.name,
+                c.description,
+                c.image_path,
+                c.created_at,
+                COUNT(p.id) AS product_count
+            FROM categories c
+            LEFT JOIN products p ON p.category_id = c.id
+            GROUP BY
+                c.id, c.name, c.description, c.image_path, c.created_at
+            ORDER BY c.id DESC
+        `);
+
+        return res.status(200).json({
+            success: true,
+            categories
+        });
+    } catch (error) {
+        console.error("Fetch categories error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch categories.",
+            error: error.message
+        });
+    }
+});
+
+// POST - Add new category with optional image
+app.post(
+    "/api/categories",
+    authenticateToken,
+    authorizeRoles("admin"),
+    upload.single("image"),
+    async (req, res) => {
+        try {
+            const name = typeof req.body.name === "string"
+                ? req.body.name.trim()
+                : "";
+            const description = typeof req.body.description === "string"
+                ? req.body.description.trim()
+                : "";
+
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Category name is required."
+                });
+            }
+
+            if (name.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Category name must be 100 characters or fewer."
+                });
+            }
+
+            const imagePath = req.file
+                ? `uploads/${req.file.filename}`
+                : null;
+
+            const [result] = await db.query(
+                `INSERT INTO categories (name, description, image_path)
+                 VALUES (?, ?, ?)`,
+                [name, description || null, imagePath]
+            );
+
+            return res.status(201).json({
+                success: true,
+                message: "Category added successfully.",
+                categoryId: result.insertId,
+                image_path: imagePath
+            });
+        } catch (error) {
+            console.error("Add category error:", error);
+
+            if (error.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    success: false,
+                    message: "A category with this name already exists."
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Failed to add category.",
+                error: error.message
+            });
+        }
+    }
+);
+
+// PUT - Update category and optionally replace its image
+app.put(
+    "/api/categories/:id",
+    authenticateToken,
+    authorizeRoles("admin"),
+    upload.single("image"),
+    async (req, res) => {
+        try {
+            const categoryId = Number(req.params.id);
+            const name = typeof req.body.name === "string"
+                ? req.body.name.trim()
+                : "";
+            const description = typeof req.body.description === "string"
+                ? req.body.description.trim()
+                : "";
+
+            if (!Number.isInteger(categoryId) || categoryId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid category ID."
+                });
+            }
+
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Category name is required."
+                });
+            }
+
+            if (name.length > 100) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Category name must be 100 characters or fewer."
+                });
+            }
+
+            const [existing] = await db.query(
+                "SELECT id, image_path FROM categories WHERE id = ?",
+                [categoryId]
+            );
+
+            if (existing.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Category not found."
+                });
+            }
+
+            // Keep old image when no replacement image is uploaded.
+            const imagePath = req.file
+                ? `uploads/${req.file.filename}`
+                : existing[0].image_path;
+
+            await db.query(
+                `UPDATE categories
+                 SET name = ?, description = ?, image_path = ?
+                 WHERE id = ?`,
+                [name, description || null, imagePath, categoryId]
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Category updated successfully.",
+                image_path: imagePath
+            });
+        } catch (error) {
+            console.error("Update category error:", error);
+
+            if (error.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    success: false,
+                    message: "A category with this name already exists."
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: "Failed to update category.",
+                error: error.message
+            });
+        }
+    }
+);
+
+// DELETE - Delete category only when no products are linked
+app.delete(
+    "/api/categories/:id",
+    authenticateToken,
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const categoryId = Number(req.params.id);
+
+            if (!Number.isInteger(categoryId) || categoryId <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid category ID."
+                });
+            }
+
+            const [existing] = await db.query(
+                "SELECT id FROM categories WHERE id = ?",
+                [categoryId]
+            );
+
+            if (existing.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Category not found."
+                });
+            }
+
+            const [products] = await db.query(
+                "SELECT COUNT(*) AS total FROM products WHERE category_id = ?",
+                [categoryId]
+            );
+
+            if (Number(products[0].total) > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Cannot delete this category because products are linked to it."
+                });
+            }
+
+            await db.query(
+                "DELETE FROM categories WHERE id = ?",
+                [categoryId]
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: "Category deleted successfully."
+            });
+        } catch (error) {
+            console.error("Delete category error:", error);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to delete category.",
+                error: error.message
+            });
+        }
+    }
+);
+
+// ADMIN: GET ALL REGISTERED CUSTOMERS
+app.get(
+    "/api/admin/customers",
+    authenticateToken,
+    authorizeRoles("admin"),
+    async (req, res) => {
+        try {
+            const [customers] = await db.query(`
+                SELECT
+                    id,
+                    first_name,
+                    last_name,
+                    email,
+                    phone,
+                    created_at
+                FROM users
+                WHERE role = 'user'
+                ORDER BY created_at DESC, id DESC
+            `);
+
+            return res.status(200).json({
+                success: true,
+                count: customers.length,
+                customers
+            });
+
+        } catch (error) {
+            console.error("Fetch customers error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch customers."
             });
         }
     }
@@ -680,6 +1393,136 @@ app.get("/api/user/profile", authenticateToken, async (req, res) => {
     }
 });
 
+
+// ---------------- RIDER MANAGEMENT + LIVE TRACKING ----------------
+// Run the supplied rider-migration.sql before using these endpoints.
+
+// Admin: list rider profiles with latest GPS point and activity summary.
+app.get("/api/admin/riders", authenticateToken, authorizeRoles("admin"), async (req, res) => {
+  try {
+    const [riders] = await db.query(`
+      SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.created_at,
+             rp.status, rp.vehicle_type, rp.license_number,
+             loc.latitude, loc.longitude, loc.accuracy, loc.recorded_at AS location_updated_at,
+             (SELECT COUNT(*) FROM rider_activities ra WHERE ra.rider_id = u.id) AS activity_count
+      FROM users u
+      INNER JOIN rider_profiles rp ON rp.user_id = u.id
+      LEFT JOIN rider_locations loc ON loc.id = (
+        SELECT rl.id FROM rider_locations rl WHERE rl.rider_id = u.id
+        ORDER BY rl.recorded_at DESC, rl.id DESC LIMIT 1
+      )
+      WHERE u.role = 'rider'
+      ORDER BY u.created_at DESC, u.id DESC
+    `);
+    res.json({ success: true, riders });
+  } catch (error) {
+    console.error("Fetch riders error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch riders." });
+  }
+});
+
+// Admin: create a rider login and rider profile.
+app.post("/api/admin/riders", authenticateToken, authorizeRoles("admin"), async (req, res) => {
+  const { first_name, last_name, email, phone, password, vehicle_type, license_number } = req.body;
+  const firstName = String(first_name || "").trim();
+  const lastName = String(last_name || "").trim();
+  const cleanEmail = String(email || "").trim().toLowerCase();
+  const cleanPhone = String(phone || "").trim();
+  if (!firstName || !lastName || !cleanEmail || !cleanPhone || typeof password !== "string" || password.length < 8) {
+    return res.status(400).json({ success: false, message: "Enter rider name, email, phone and a password of at least 8 characters." });
+  }
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [userResult] = await connection.execute(
+      `INSERT INTO users (first_name, last_name, email, phone, password, role) VALUES (?, ?, ?, ?, ?, 'rider')`,
+      [firstName, lastName, cleanEmail, cleanPhone, hashedPassword]
+    );
+    await connection.execute(
+      `INSERT INTO rider_profiles (user_id, status, vehicle_type, license_number) VALUES (?, 'offline', ?, ?)`,
+      [userResult.insertId, vehicle_type || null, license_number || null]
+    );
+    await connection.commit();
+    res.status(201).json({ success: true, message: "Rider created successfully.", riderId: userResult.insertId });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Create rider error:", error);
+    res.status(error.code === "ER_DUP_ENTRY" ? 409 : 500).json({ success: false, message: error.code === "ER_DUP_ENTRY" ? "Email already registered." : "Failed to create rider." });
+  } finally {
+    connection.release();
+  }
+});
+
+// Admin: change operational status. GPS-derived online/offline should be maintained by the app heartbeat.
+app.patch("/api/admin/riders/:id/status", authenticateToken, authorizeRoles("admin"), async (req, res) => {
+  const allowed = ["available", "on_delivery", "offline"];
+  const status = String(req.body.status || "").toLowerCase();
+  if (!allowed.includes(status)) return res.status(400).json({ success: false, message: "Invalid rider status." });
+  try {
+    const [result] = await db.execute("UPDATE rider_profiles SET status = ? WHERE user_id = ?", [status, req.params.id]);
+    if (!result.affectedRows) return res.status(404).json({ success: false, message: "Rider not found." });
+    res.json({ success: true, message: "Rider status updated." });
+  } catch (error) {
+    console.error("Update rider status error:", error);
+    res.status(500).json({ success: false, message: "Failed to update rider status." });
+  }
+});
+
+// Admin: rider details and action history.
+app.get("/api/admin/riders/:id", authenticateToken, authorizeRoles("admin"), async (req, res) => {
+  try {
+    const [rows] = await db.execute(`
+     SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.created_at,
+       rp.status, rp.vehicle_type, rp.license_number
+FROM users u
+INNER JOIN rider_profiles rp ON rp.user_id = u.id
+WHERE u.id = ? AND u.role = 'rider'
+LIMIT 1
+    `, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ success: false, message: "Rider not found." });
+    const [locations] = await db.execute("SELECT latitude, longitude, accuracy, recorded_at FROM rider_locations WHERE rider_id = ? ORDER BY recorded_at DESC LIMIT 20", [req.params.id]);
+    const [activities] = await db.execute("SELECT id, order_id, event_type, description, created_at FROM rider_activities WHERE rider_id = ? ORDER BY created_at DESC LIMIT 100", [req.params.id]);
+    res.json({ success: true, rider: rows[0], locations, activities });
+  } catch (error) {
+    console.error("Fetch rider details error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch rider details." });
+  }
+});
+
+// Rider app: receive a GPS point from the authenticated rider device.
+app.post("/api/rider/location", authenticateToken, authorizeRoles("rider"), async (req, res) => {
+  const latitude = Number(req.body.latitude);
+  const longitude = Number(req.body.longitude);
+  const accuracy = req.body.accuracy == null ? null : Number(req.body.accuracy);
+  if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+    return res.status(400).json({ success: false, message: "Valid latitude and longitude are required." });
+  }
+  try {
+    await db.execute("INSERT INTO rider_locations (rider_id, latitude, longitude, accuracy) VALUES (?, ?, ?, ?)", [req.user.id, latitude, longitude, Number.isFinite(accuracy) ? accuracy : null]);
+    await db.execute("UPDATE rider_profiles SET last_seen_at = CURRENT_TIMESTAMP WHERE user_id = ?", [req.user.id]);
+    res.status(201).json({ success: true, message: "Location received." });
+  } catch (error) {
+    console.error("Save rider location error:", error);
+    res.status(500).json({ success: false, message: "Unable to save rider location." });
+  }
+});
+
+// Rider app: append an auditable action (accepted, picked_up, delivered, etc.).
+app.post("/api/rider/activity", authenticateToken, authorizeRoles("rider"), async (req, res) => {
+  const eventType = String(req.body.event_type || "").trim().toLowerCase();
+  const description = String(req.body.description || "").trim();
+  const allowedEvents = ["online", "offline", "accepted", "reached_pickup", "picked_up", "reached_dropoff", "delivered", "cancelled", "status_changed"];
+  if (!allowedEvents.includes(eventType) || !description) return res.status(400).json({ success: false, message: "A valid event_type and description are required." });
+  try {
+    const [result] = await db.execute("INSERT INTO rider_activities (rider_id, order_id, event_type, description) VALUES (?, ?, ?, ?)", [req.user.id, req.body.order_id || null, eventType, description]);
+    res.status(201).json({ success: true, activityId: result.insertId });
+  } catch (error) {
+    console.error("Save rider activity error:", error);
+    res.status(500).json({ success: false, message: "Unable to save rider activity." });
+  }
+});
+
 // Return JSON for any unhandled errors
 app.use((error, req, res, next) => {
     console.error("Unhandled backend error:", error);
@@ -699,7 +1542,7 @@ async function startServer() {
     try {
         await initializeDatabase();
 
-        app.listen(PORT, () => {
+        app.listen(PORT, "0.0.0.0", () => {
             console.log(`Server running on http://localhost:${PORT}`);
         });
     } catch (error) {
