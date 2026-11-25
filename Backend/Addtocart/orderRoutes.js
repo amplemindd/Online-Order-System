@@ -391,15 +391,21 @@ router.get("/admin/orders/:id", authenticateToken, authorizeRoles("admin"), asyn
     const [orders] = await db.execute("SELECT * FROM orders WHERE id = ?", [orderId]);
     if (!orders.length) return res.status(404).json({ success: false, message: "Order not found." });
 
-    const [items] = await db.execute(
-      `SELECT product_id, COALESCE(product_name, p.name) AS product_name,
-              quantity, price, subtotal, product_size, product_color,
-              COALESCE(image_path, p.image_path) AS image_path
-       FROM order_items oi
-       LEFT JOIN products p ON p.id = oi.product_id
-       WHERE oi.order_id = ?`,
-      [orderId]
-    );
+    const [items] = await db.query(
+  `SELECT
+      oi.product_id,
+      COALESCE(oi.product_name, p.name) AS product_name,
+      oi.quantity,
+      oi.price,
+      oi.subtotal,
+      oi.product_size,
+      oi.product_color,
+      COALESCE(oi.image_path, p.image_path) AS image_path
+   FROM order_items oi
+   LEFT JOIN products p ON p.id = oi.product_id
+   WHERE oi.order_id = ?`,
+  [orderId]
+);
     res.json({ success: true, order: orders[0], items });
   } catch (error) {
     console.error("Admin order detail error:", error);
