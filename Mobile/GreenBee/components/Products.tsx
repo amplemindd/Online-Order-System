@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 
 import { Product, useCart } from '../context/CartContext';
-import { useWishlist } from '../context/WishlistContext';
 
 const API_BASE_URL = 'https://online-order-system-1.onrender.com';
 
@@ -25,11 +24,19 @@ type ApiProduct = {
   stock?: number;
   pricing_type?: string;
   category?: string;
+  category_name?: string;
+  images?: Array<string | { image_path?: string; url?: string }>;
+  [key: string]: any;
 };
 
-const Products: React.FC = () => {
+type ProductsProps = {
+  categoryName?: string | null;
+  onBack?: () => void;
+  onProductPress?: (product: ApiProduct & Product) => void;
+};
+
+const Products: React.FC<ProductsProps> = ({ categoryName, onBack, onProductPress }) => {
   const { addToCart, cartCount } = useCart();
-  const { toggleWishlist, isWishlisted } = useWishlist();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,6 +86,7 @@ const Products: React.FC = () => {
 
     const formattedProducts: Product[] = data.products.map(
       (item: ApiProduct) => ({
+        ...item,
         id: item.id,
         name: item.name,
         price: Number(item.price),
@@ -152,7 +160,8 @@ const Products: React.FC = () => {
     >
       {/* Heading */}
       <View style={styles.headingContainer}>
-        <Text style={styles.heading}>OUR PRODUCTS</Text>
+        {onBack && <TouchableOpacity onPress={onBack} style={styles.backButton}><Text style={styles.backButtonText}>‹  Back</Text></TouchableOpacity>}
+        <Text style={styles.heading}>{categoryName ? categoryName.toUpperCase() : 'OUR PRODUCTS'}</Text>
 
         <Text style={styles.subheading}>
           Freshness delivered to your doorstep
@@ -194,23 +203,14 @@ const Products: React.FC = () => {
       {/* Product Grid */}
       {!loading && !error && (
         <View style={styles.productGrid}>
-          {products.map(product => {
-            const wishlisted = isWishlisted(product.id);
-
+          {products.filter(product => !categoryName || String((product as any).category_name || (product as any).category || '').toLowerCase() === categoryName.toLowerCase()).map(product => {
             return (
-              <View
+              <TouchableOpacity
                 style={styles.productCard}
                 key={product.id}
+                activeOpacity={0.88}
+                onPress={() => onProductPress?.(product as ApiProduct & Product)}
               >
-                {/* Wishlist Button */}
-                <TouchableOpacity
-                  style={styles.heartButton}
-                  onPress={() => toggleWishlist(product)}
-                >
-                  <Text style={styles.heart}>
-                    {wishlisted ? '♥' : '♡'}
-                  </Text>
-                </TouchableOpacity>
 
                 {/* Product Image */}
                 <Image
@@ -241,7 +241,7 @@ const Products: React.FC = () => {
                       : 'ADD TO CART'}
                   </Text>
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             );
           })}
 
@@ -362,6 +362,9 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingBottom: 30,
   },
+
+  backButton: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 4 },
+  backButtonText: { color: '#238B45', fontSize: 14, fontWeight: '700' },
 
   headingContainer: {
     alignItems: 'center',

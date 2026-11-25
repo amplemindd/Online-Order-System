@@ -1,7 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
+  Image,
+  ActivityIndicator,
   StyleSheet,
   StatusBar,
   Modal,
@@ -18,7 +20,6 @@ import MaterialIcons from '@react-native-vector-icons/material-icons';
 
 import Navbar from './Navbar';
 import Banner from './Banner';
-import Footer from './Footer';
 import CategorySidebar from './CategorySidebar';
 import Products from './Products';
 import Cart from './Cart';
@@ -35,11 +36,41 @@ import PrivacyPolicy from './PrivacyPolicy';
 import Testimonials from './Testimonials';
 import Ourteam from './Ourteam';
 import NotFound from './NotFound';
-import FavoriteFruits from './FavoriteFruits';
 import OrderHistory from './OrderHistory';
+import ProductDetails from './ProductDetails';
 
+const API_BASE = "http://10.0.2.2:5000/api";
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SIDEBAR_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 320);
+
+
+const SERVER_URL = "http://10.0.2.2:5000";
+
+const getImageUrl = (imagePath?: string | null) => {
+  if (!imagePath) return undefined;
+
+  if (imagePath.startsWith("http")) {
+    return imagePath;
+  }
+
+  return `${SERVER_URL}/${imagePath.replace(/^\/+/, "")}`;
+};
+
+type HomeCategory = {
+  id: number | string;
+  name: string;
+  image_path?: string | null;
+  description?: string | null;
+  product_count?: number;
+};
+
+type HomeProduct = {
+  id: number | string;
+  name: string;
+  price: number | string;
+  image_path?: string | null;
+  pricing_type?: string | null;
+};
 
 const Home: React.FC = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -62,9 +93,86 @@ const [showTestimonials, setShowTestimonials] = useState(false);
 const [showOurTeam, setShowOurTeam] = useState(false);
 const [showNotFound, setShowNotFound] = useState(false);
 const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  // Home page category and product data
+  const [categories, setCategories] = useState<HomeCategory[]>([]);
+  const [homeProducts, setHomeProducts] = useState<HomeProduct[]>([]);
+  const [homeLoading, setHomeLoading] = useState<boolean>(true);
+  const [homeError, setHomeError] = useState<string>('');
   
 
   const insets = useSafeAreaInsets();
+
+  const [selectedCategory, setSelectedCategory] =
+  useState<string | null>(null);
+
+  const getImageUrl = (imagePath?: string | null): string | null => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    return `http://10.0.2.2:5000/${imagePath.replace(/^\/+/, '')}`;
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadHomeData = async () => {
+      try {
+        setHomeLoading(true);
+        setHomeError('');
+
+        const [categoryResponse, productResponse] = await Promise.all([
+          fetch(`${API_BASE}/categories`),
+          fetch(`${API_BASE}/products`),
+        ]);
+
+        if (!categoryResponse.ok || !productResponse.ok) {
+          throw new Error('Unable to load categories and products.');
+        }
+
+        const categoryData = await categoryResponse.json();
+        const productData = await productResponse.json();
+
+        const fetchedCategories = Array.isArray(categoryData)
+          ? categoryData
+          : categoryData.categories || [];
+
+        const fetchedProducts = Array.isArray(productData)
+          ? productData
+          : productData.products || [];
+
+        // Shuffle products so the home page shows a different selection/order.
+        const shuffledProducts = [...fetchedProducts];
+        for (let i = shuffledProducts.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledProducts[i], shuffledProducts[j]] = [
+            shuffledProducts[j],
+            shuffledProducts[i],
+          ];
+        }
+
+        if (isMounted) {
+          setCategories(fetchedCategories);
+          setHomeProducts(shuffledProducts.slice(0, 8));
+        }
+      } catch (error: any) {
+        console.log("HOME API ERROR:", error);
+        if (isMounted) {
+          setHomeError(error?.message || 'Unable to load home page data.');
+        }
+      } finally {
+        if (isMounted) setHomeLoading(false);
+      }
+    };
+
+    loadHomeData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const scrollViewRef =
     useRef<React.ElementRef<typeof ScrollView>>(null);
@@ -225,13 +333,15 @@ if (pageNavigation[item]) {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      <View style={{ paddingTop: insets.top }}>
-        <Navbar
-          onMenuPress={openMenu}
-          onCategoryPress={() => setCategoryOpen(true)}
-          onSearch={handleSearch}
-        />
-      </View>
+      {!selectedProduct && (
+        <View style={{ paddingTop: insets.top }}>
+          <Navbar
+            onMenuPress={openMenu}
+            onCategoryPress={() => setCategoryOpen(true)}
+            onSearch={handleSearch}
+          />
+        </View>
+      )}
 
       <ScrollView
         ref={scrollViewRef}
@@ -240,7 +350,16 @@ if (pageNavigation[item]) {
         showsVerticalScrollIndicator={false}
       >
 
-      {showLogin ? (
+      {selectedProduct ? (
+        <ProductDetails
+          product={selectedProduct}
+          onBack={() => setSelectedProduct(null)}
+          onOpenCart={() => {
+            setSelectedProduct(null);
+            setShowCart(true);
+          }}
+        />
+      ) : showLogin ? (
         <Login
         onBack={() => {
           setShowLogin(false);
@@ -314,12 +433,147 @@ if (pageNavigation[item]) {
   ) : showAboutUs ? (
     <AboutUs />
   ) : showProducts ? (
-  <Products />
+  <Products
+    categoryName={selectedCategory}
+    onProductPress={(product) => setSelectedProduct(product)}
+    onBack={() => {
+      setShowProducts(false);
+      setSelectedCategory(null);
+      scrollToTop();
+    }}
+  />
 ) : (
 <>
-<Banner />
-<FavoriteFruits />
-<Footer />
+  <Banner />
+  <View style={styles.homeSection}>
+    <Text style={styles.sectionTitle}>Shop by Category</Text>
+    <Text style={styles.sectionSubtitle}>
+      Explore fresh products from your favourite categories
+    </Text>
+
+    {homeLoading ? (
+      <ActivityIndicator
+        size="large"
+        color="#16845C"
+        style={styles.homeLoader}
+      />
+    ) : categories.length > 0 ? (
+      <View style={styles.categoryGrid}>
+        {categories.map((category) => {
+          const categoryImage = getImageUrl(category.image_path);
+
+          return (
+            <TouchableOpacity
+              key={String(category.id)}
+              style={styles.categoryCard}
+              activeOpacity={0.8}
+              onPress={() => {
+  setSelectedCategory(category.name);
+  setShowProducts(true);
+  setCategoryOpen(false);
+  scrollToTop();
+}}
+            >
+              <View style={styles.categoryImageWrap}>
+                {categoryImage ? (
+                  <Image
+  source={
+    category.image_path
+      ? { uri: getImageUrl(category.image_path) ?? undefined }
+      : undefined
+  }
+  style={styles.categoryImage}
+  resizeMode="contain"
+/>
+                ) : (
+                  <Text style={styles.categoryPlaceholder}>
+                    {String(category.name || 'C').charAt(0).toUpperCase()}
+                  </Text>
+                )}
+              </View>
+              <Text style={styles.categoryName} numberOfLines={2}>
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    ) : (
+      <Text style={styles.emptyHomeText}>
+        {homeError || 'No categories available yet.'}
+      </Text>
+    )}
+  </View>
+
+  <View style={styles.homeProductsSection}>
+    <View style={styles.productsHeadingRow}>
+      <View>
+        <Text style={styles.sectionTitle}>Popular Products</Text>
+        <Text style={styles.sectionSubtitle}>
+          Fresh picks for you
+        </Text>
+      </View>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => setShowProducts(true)}
+      >
+        <Text style={styles.viewAllText} onPress={() => {
+  setSelectedCategory(null);
+  setShowProducts(true);
+}}>View All</Text>
+      </TouchableOpacity>
+    </View>
+
+    {homeLoading ? (
+      <ActivityIndicator
+        size="small"
+        color="#16845C"
+        style={styles.homeLoader}
+      />
+    ) : homeProducts.length > 0 ? (
+      <View style={styles.productGrid}>
+        {homeProducts.map((product) => {
+          const productImage = getImageUrl(product.image_path);
+
+          return (
+            <TouchableOpacity
+              key={String(product.id)}
+              style={styles.homeProductCard}
+              activeOpacity={0.85}
+              onPress={() => setSelectedProduct(product)}
+            >
+              <View style={styles.homeProductImageWrap}>
+                {productImage ? (
+                 <Image
+  source={
+    product.image_path
+      ? { uri: getImageUrl(product.image_path) ?? undefined }
+      : undefined
+  }
+  style={styles.homeProductImage}
+  resizeMode="contain"
+/>
+                ) : (
+                  <Text style={styles.productPlaceholder}>🛒</Text>
+                )}
+              </View>
+              <Text style={styles.homeProductName} numberOfLines={2}>
+                {product.name}
+              </Text>
+              <Text style={styles.homeProductPrice}>
+                ₹{Number(product.price || 0).toFixed(2)}
+                {product.pricing_type ? ` / ${product.pricing_type}` : ''}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    ) : (
+      <Text style={styles.emptyHomeText}>
+        {homeError || 'No products available yet.'}
+      </Text>
+    )}
+  </View>
 </>
 )}
       </ScrollView>
@@ -505,7 +759,7 @@ if (pageNavigation[item]) {
       />
 
       {/* Fixed bottom navigation */}
-      <View
+      {!selectedProduct && <View
         style={[
           styles.fixedBottom,
           { paddingBottom: Math.max(insets.bottom, 8) },
@@ -629,7 +883,7 @@ if (pageNavigation[item]) {
 
           <Text style={styles.bottomLabel}>On Top</Text>
         </TouchableOpacity>
-      </View>
+      </View>}
     </View>
   );
 };
@@ -646,6 +900,149 @@ const styles = StyleSheet.create({
 
   scrollContent: {
     paddingBottom: 8,
+  },
+
+  homeSection: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
+  },
+
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#182333',
+  },
+
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#777777',
+    marginTop: 5,
+    marginBottom: 18,
+  },
+
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginHorizontal: -4,
+  },
+
+  categoryCard: {
+    width: '30%',
+    marginHorizontal: '1.5%',
+    marginBottom: 18,
+    alignItems: 'center',
+  },
+
+  categoryImageWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: '#F5F7F5',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  categoryPlaceholder: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#16845C',
+  },
+
+  categoryName: {
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#333333',
+    textAlign: 'center',
+  },
+
+  homeProductsSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 24,
+    backgroundColor: '#F8FAF8',
+  },
+
+  productsHeadingRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+
+  viewAllText: {
+    color: '#16845C',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 5,
+  },
+
+  productGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+
+  homeProductCard: {
+    width: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#EEF1EE',
+  },
+
+  homeProductImageWrap: {
+    width: '100%',
+    height: 125,
+    backgroundColor: '#FAFBFA',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
+  homeProductImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  productPlaceholder: {
+    fontSize: 34,
+  },
+
+  homeProductName: {
+    marginTop: 9,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#263238',
+  },
+
+  homeProductPrice: {
+    marginTop: 5,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#16845C',
+  },
+
+  homeLoader: {
+    marginVertical: 28,
+  },
+
+  emptyHomeText: {
+    color: '#777777',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 22,
   },
 
   modalContainer: {
