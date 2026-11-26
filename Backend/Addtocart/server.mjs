@@ -138,80 +138,231 @@ app.get("/api/test-db", async (req, res) => {
     }
 });
 
-// Add product to cart
-app.post("/api/cart", async (req, res) => {
-    try {
-        const { product_name, product_price, quantity } = req.body;
+// ==========================================
+// ACCOUNT-WISE CART APIs
+// ==========================================
 
-        const price = Number(product_price);
-        const qty = Number(quantity);
+// Get or create logged-in user's cart
+async function getOrCreateUserCart(userId) {
+  await db.execute(
+    `INSERT INTO user_carts (user_id)
+     VALUES (?)
+     ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)`,
+    [userId]
+  );
 
-        if (
-            typeof product_name !== "string" ||
-            !product_name.trim() ||
-            product_price === undefined ||
-            !Number.isFinite(price) ||
-            price < 0 ||
-            !Number.isInteger(qty) ||
-            qty <= 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide a valid product name, price, and quantity."
-            });
-        }
+  const [rows] = await db.execute(
+    "SELECT id FROM user_carts WHERE user_id = ?",
+    [userId]
+  );
 
-        const totalPrice = Number((price * qty).toFixed(2));
+  return rows[0].id;
+}
 
-        const sql = `
-            INSERT INTO cart_items
-            (product_name, product_price, quantity, total_price)
-            VALUES (?, ?, ?, ?)
-        `;
+// GET: Logged-in user's cart
+app.get("/api/cart", authenticateToken, async (req, res) => {
+  try {
+    const cartId = await getOrCreateUserCart(req.user.id);
 
-        const [result] = await db.execute(sql, [
-            product_name.trim(),
-            price,
-            qty,
-            totalPrice
-        ]);
+    const [items] = await db.execute(
+      `SELECT
+         ci.id AS cart_item_id,
+         ci.product_id,
+         ci.quantity,
+         ci.product_size AS size,
+         p.name,
+         p.price,
+         p.image_path,
+         p.pricing_type
+       FROM user_cart_items ci
+       INNER JOIN products p ON p.id = ci.product_id
+       WHERE ci.cart_id = ?
+       ORDER BY ci.id DESC`,
+      [cartId]
+    );
 
-        res.status(201).json({
-            success: true,
-            message: "Product added to cart successfully!",
-            id: result.insertId
-        });
-    } catch (error) {
-        console.error("Add to cart error:", error);
+    res.json({
+      success: true,
+      items
+    });
 
-        res.status(500).json({
-            success: false,
-            message: "Failed to add product to cart.",
-            error: error.message
-        });
-    }
+  } catch (error) {
+    console.error("Fetch user cart error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch cart."
+    });
+  }
 });
 
-// Get cart items
-app.get("/api/cart", async (req, res) => {
-    try {
-        const [items] = await db.query(
-            "SELECT * FROM cart_items ORDER BY id DESC"
-        );
+// POST: Add product to logged-in user's cart
+app.post("/api/cart", authenticateToken, async (req, res) => {
+  try {
+    const productId = Number(req.body.product_id);
+    const quantity = Number(req.body.quantity ?? 1);
+    const size = String(req.body.size ?? "").trim();
 
-        res.json({
-            success: true,
-            items
-        });
-    } catch (error) {
-        console.error("Fetch cart error:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch cart items.",
-            error: error.message
-        });
+    if (
+      !Number.isInteger(productId) ||
+      productId <= 0 ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid product or quantity."
+      });
     }
+
+    const [products] = await db.execute(
+      "SELECT id FROM products WHERE id = ?",
+      [productId]
+    );
+
+    if (!products.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found."
+      });
+    }
+
+    const cartId = await getOrCreateUserCart(req.user.id);
+
+    await db.execute(
+      `INSERT INTO user_cart_items
+       (cart_id, product_id, quantity, product_size)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+       quantity = quantity + VALUES(quantity)`,
+      [cartId, productId, quantity, size]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Product added to your cart."
+    });
+
+  } catch (error) {
+    console.error("Add user cart item error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to add product to cart."
+    });
+  }
+});
+
+// PUT: Update quantity of a cart item
+app.put("/api/cart/:itemId", authenticateToken, async (req, res) => {
+  try {
+    const itemId = Number(req.params.itemId);
+    const quantity = Number(req.body.quantity);
+
+    if (
+      !Number.isInteger(itemId) ||
+      itemId <= 0 ||
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid cart item or quantity."
+      });
+    }
+
+    const [result] = await db.execute(
+      `UPDATE user_cart_items ci
+       INNER JOIN user_carts c ON c.id = ci.cart_id
+       SET ci.quantity = ?
+       WHERE ci.id = ? AND c.user_id = ?`,
+      [quantity, itemId, req.user.id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart item not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Cart quantity updated."
+    });
+
+  } catch (error) {
+    console.error("Update cart quantity error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update quantity."
+    });
+  }
+});
+
+// DELETE: Remove a cart item
+app.delete("/api/cart/:itemId", authenticateToken, async (req, res) => {
+  try {
+    const itemId = Number(req.params.itemId);
+
+    const [result] = await db.execute(
+      `DELETE ci FROM user_cart_items ci
+       INNER JOIN user_carts c ON c.id = ci.cart_id
+       WHERE ci.id = ? AND c.user_id = ?`,
+      [itemId, req.user.id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart item not found."
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Product removed from cart."
+    });
+
+  } catch (error) {
+    console.error("Remove cart item error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove cart item."
+    });
+  }
+});
+
+// DELETE: Clear only logged-in user's cart
+app.delete("/api/cart", authenticateToken, async (req, res) => {
+  try {
+    const [carts] = await db.execute(
+      "SELECT id FROM user_carts WHERE user_id = ?",
+      [req.user.id]
+    );
+
+    if (carts.length) {
+      await db.execute(
+        "DELETE FROM user_cart_items WHERE cart_id = ?",
+        [carts[0].id]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: "Your cart has been cleared."
+    });
+
+  } catch (error) {
+    console.error("Clear user cart error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to clear cart."
+    });
+  }
 });
 
 // GET all products with category names
