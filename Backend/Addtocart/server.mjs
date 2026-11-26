@@ -1298,12 +1298,12 @@ app.post("/api/login", async (req, res) => {
         }
 
         const [users] = await db.execute(
-            `SELECT id, first_name, last_name, email, password, role
-             FROM users
-             WHERE email = ?
-             LIMIT 1`,
-            [cleanEmail]
-        );
+    `SELECT id, first_name, last_name, email, phone, password, role
+     FROM users
+     WHERE email = ?
+     LIMIT 1`,
+    [cleanEmail]
+);
 
         if (users.length === 0) {
             return res.status(401).json({
@@ -1342,12 +1342,13 @@ app.post("/api/login", async (req, res) => {
             message: "Login successful!",
             token,
             user: {
-                id: user.id,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                email: user.email,
-                role: user.role
-            }
+    id: user.id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role
+}
         });
 
     } catch (error) {
@@ -1364,12 +1365,12 @@ app.post("/api/login", async (req, res) => {
 app.get("/api/user/profile", authenticateToken, async (req, res) => {
     try {
         const [users] = await db.execute(
-            `SELECT id, first_name, last_name, email, role, created_at
-             FROM users
-             WHERE id = ?
-             LIMIT 1`,
-            [req.user.id]
-        );
+    `SELECT id, first_name, last_name, email, phone, role, created_at
+     FROM users
+     WHERE id = ?
+     LIMIT 1`,
+    [req.user.id]
+);
 
         if (users.length === 0) {
             return res.status(404).json({
