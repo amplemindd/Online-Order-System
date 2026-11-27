@@ -296,7 +296,15 @@ router.get("/orders/my-orders", authenticateToken, async (req, res) => {
         city,
         state,
         postal_code,
-        country
+        country,
+
+        EXISTS (
+        SELECT 1
+        FROM rider_orders ro
+        WHERE ro.order_id = orders.id
+        AND ro.status IN ('accepted', 'picked_up')
+        ) AS rider_assigned
+
        FROM orders
        WHERE user_id = ?
        ORDER BY created_at DESC`,
@@ -326,10 +334,17 @@ router.get("/orders/my-orders/:id", authenticateToken, async (req, res) => {
       });
     }
 
-    const [orders] = await db.execute(
-      `SELECT *
+        const [orders] = await db.execute(
+      `SELECT
+        orders.*,
+        EXISTS (
+          SELECT 1
+          FROM rider_orders ro
+          WHERE ro.order_id = orders.id
+            AND ro.status IN ('accepted', 'picked_up')
+        ) AS rider_assigned
        FROM orders
-       WHERE id = ? AND user_id = ?`,
+       WHERE orders.id = ? AND orders.user_id = ?`,
       [orderId, req.user.id]
     );
 
@@ -366,6 +381,81 @@ router.get("/orders/my-orders/:id", authenticateToken, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Unable to fetch order details."
+    });
+  }
+});
+
+// CUSTOMER: Get assigned rider details and latest live location
+router.get("/orders/my-orders/:id/tracking", authenticateToken, async (req, res) => {
+  try {
+    const orderId = Number(req.params.id);
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID."
+      });
+    }
+
+    const [riders] = await db.execute(
+      `SELECT
+         u.id AS rider_id,
+         u.first_name,
+         u.last_name,
+         u.phone AS mobile_number,
+         loc.latitude,
+         loc.longitude,
+         loc.accuracy,
+         loc.recorded_at AS location_updated_at
+       FROM orders o
+       INNER JOIN rider_orders ro
+         ON ro.order_id = o.id
+        AND ro.status IN ('accepted', 'picked_up')
+       INNER JOIN users u
+         ON u.id = ro.rider_id
+       LEFT JOIN rider_locations loc
+         ON loc.id = (
+           SELECT rl.id
+           FROM rider_locations rl
+           WHERE rl.rider_id = ro.rider_id
+           ORDER BY rl.recorded_at DESC, rl.id DESC
+           LIMIT 1
+         )
+       WHERE o.id = ?
+         AND o.user_id = ?
+       ORDER BY ro.assigned_at DESC
+       LIMIT 1`,
+      [orderId, req.user.id]
+    );
+
+    if (!riders.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No active rider is assigned to this order."
+      });
+    }
+
+    const rider = riders[0];
+
+    return res.json({
+      success: true,
+      rider: {
+        id: rider.rider_id,
+        name: `${rider.first_name} ${rider.last_name || ''}`.trim(),
+        phone: rider.mobile_number,
+        latitude: rider.latitude,
+        longitude: rider.longitude,
+        accuracy: rider.accuracy,
+        location_updated_at: rider.location_updated_at
+      }
+    });
+
+  } catch (error) {
+    console.error("Customer rider tracking error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch rider tracking details."
     });
   }
 });
@@ -427,5 +517,495 @@ router.put("/admin/orders/:id/status", authenticateToken, authorizeRoles("admin"
     res.status(500).json({ success: false, message: "Unable to update order status." });
   }
 });
+
+
+// RIDER: ACCEPT AN AVAILABLE ORDER
+router.post(
+  "/rider/orders/:id/accept",
+  authenticateToken,
+  authorizeRoles("rider"),
+  async (req, res) => {
+    const orderId = Number(req.params.id);
+
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID.",
+      });
+    }
+
+    const connection = await db.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      const [orders] = await connection.execute(
+        `SELECT id, payment_method, payment_status, status
+         FROM orders
+         WHERE id = ?
+         FOR UPDATE`,
+        [orderId]
+      );
+
+      if (!orders.length) {
+        await connection.rollback();
+        return res.status(404).json({
+          success: false,
+          message: "Order not found.",
+        });
+      }
+
+      const order = orders[0];
+
+      const isAvailable =
+        (
+          String(order.payment_method).toLowerCase() === "cod" &&
+          order.payment_status === "pending" &&
+          order.status === "pending"
+        ) ||
+        (
+          String(order.payment_method).toLowerCase() !== "cod" &&
+          order.payment_status === "paid" &&
+          order.status === "placed"
+        );
+
+      if (!isAvailable) {
+        await connection.rollback();
+        return res.status(409).json({
+          success: false,
+          message: "This order is no longer available.",
+        });
+      }
+
+      const [assignments] = await connection.execute(
+        `SELECT id, rider_id, status
+         FROM rider_orders
+         WHERE order_id = ?
+         FOR UPDATE`,
+        [orderId]
+      );
+
+      if (assignments.length && assignments[0].status !== "cancelled") {
+        await connection.rollback();
+
+        if (Number(assignments[0].rider_id) === Number(req.user.id)) {
+          return res.json({
+            success: true,
+            message: "You have already accepted this order.",
+          });
+        }
+
+        return res.status(409).json({
+          success: false,
+          message: "Another rider has already accepted this order.",
+        });
+      }
+
+      if (assignments.length) {
+        await connection.execute(
+          `UPDATE rider_orders
+           SET rider_id = ?,
+               status = 'accepted',
+               assigned_at = CURRENT_TIMESTAMP,
+               picked_up_at = NULL,
+               delivered_at = NULL
+           WHERE order_id = ?`,
+          [req.user.id, orderId]
+        );
+      } else {
+        await connection.execute(
+          `INSERT INTO rider_orders (order_id, rider_id, status)
+           VALUES (?, ?, 'accepted')`,
+          [orderId, req.user.id]
+        );
+      }
+
+      await connection.execute(
+        `INSERT INTO rider_activities
+         (rider_id, order_id, event_type, description)
+         VALUES (?, ?, 'accepted', ?)`,
+        [req.user.id, orderId, `Accepted order #${orderId}`]
+      );
+
+      await connection.commit();
+
+      return res.json({
+        success: true,
+        message: "Order accepted successfully.",
+        orderId,
+      });
+    } catch (error) {
+      await connection.rollback();
+
+      console.error("Rider order acceptance error:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Unable to accept this order.",
+      });
+    } finally {
+      connection.release();
+    }
+  }
+);
+
+// RIDER: CONFIRM ORDER PICKUP
+router.put(
+  "/rider/orders/:id/pickup",
+  authenticateToken,
+  authorizeRoles("rider"),
+  async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+
+    try {
+      const orderId = Number(req.params.id);
+      const riderId = Number(req.user.id);
+
+      if (!Number.isInteger(orderId) || orderId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid order ID."
+        });
+      }
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [assignments] = await connection.execute(
+        `SELECT id, rider_id, status
+         FROM rider_orders
+         WHERE order_id = ?
+         FOR UPDATE`,
+        [orderId]
+      );
+
+      if (assignments.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "Order assignment not found."
+        });
+      }
+
+      const assignment = assignments[0];
+
+      if (Number(assignment.rider_id) !== riderId) {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(403).json({
+          success: false,
+          message: "This order is not assigned to you."
+        });
+      }
+
+      if (assignment.status === "picked_up") {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(200).json({
+          success: true,
+          message: "Pickup already confirmed.",
+          orderId
+        });
+      }
+
+      if (assignment.status !== "accepted") {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(409).json({
+          success: false,
+          message: "Order must be accepted before pickup."
+        });
+      }
+
+      await connection.execute(
+        `UPDATE rider_orders
+         SET status = 'picked_up',
+             picked_up_at = CURRENT_TIMESTAMP
+         WHERE order_id = ? AND rider_id = ?`,
+        [orderId, riderId]
+      );
+
+      await connection.execute(
+        `INSERT INTO rider_activities
+         (rider_id, order_id, event_type, description)
+         VALUES (?, ?, 'picked_up', ?)`,
+        [riderId, orderId, `Picked up order #${orderId}`]
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+
+      return res.status(200).json({
+        success: true,
+        message: "Pickup confirmed successfully.",
+        orderId
+      });
+
+    } catch (error) {
+      if (connection && transactionStarted) {
+        await connection.rollback();
+      }
+
+      console.error("Rider pickup confirmation error:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Unable to confirm pickup."
+      });
+
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
+);
+
+// RIDER: CONFIRM ORDER DELIVERY
+router.put(
+  "/rider/orders/:id/deliver",
+  authenticateToken,
+  authorizeRoles("rider"),
+  async (req, res) => {
+    let connection;
+    let transactionStarted = false;
+
+    try {
+      const orderId = Number(req.params.id);
+      const riderId = Number(req.user.id);
+
+      if (!Number.isInteger(orderId) || orderId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid order ID."
+        });
+      }
+
+      connection = await db.getConnection();
+      await connection.beginTransaction();
+      transactionStarted = true;
+
+      const [assignments] = await connection.execute(
+        `SELECT id, rider_id, status
+         FROM rider_orders
+         WHERE order_id = ?
+         FOR UPDATE`,
+        [orderId]
+      );
+
+      if (assignments.length === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "Order assignment not found."
+        });
+      }
+
+      const assignment = assignments[0];
+
+      if (Number(assignment.rider_id) !== riderId) {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(403).json({
+          success: false,
+          message: "This order is not assigned to you."
+        });
+      }
+
+      if (assignment.status === "delivered") {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(200).json({
+          success: true,
+          message: "Order already marked as delivered.",
+          orderId
+        });
+      }
+
+      if (assignment.status !== "picked_up") {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(409).json({
+          success: false,
+          message: "You must confirm pickup before delivery."
+        });
+      }
+
+      const [orderResult] = await connection.execute(
+        `UPDATE orders
+         SET status = 'delivered'
+         WHERE id = ?`,
+        [orderId]
+      );
+
+      if (orderResult.affectedRows === 0) {
+        await connection.rollback();
+        transactionStarted = false;
+
+        return res.status(404).json({
+          success: false,
+          message: "Customer order not found."
+        });
+      }
+
+      await connection.execute(
+        `UPDATE rider_orders
+         SET status = 'delivered',
+             delivered_at = CURRENT_TIMESTAMP
+         WHERE order_id = ? AND rider_id = ?`,
+        [orderId, riderId]
+      );
+
+      await connection.execute(
+        `INSERT INTO rider_activities
+         (rider_id, order_id, event_type, description)
+         VALUES (?, ?, 'delivered', ?)`,
+        [riderId, orderId, `Delivered order #${orderId}`]
+      );
+
+      await connection.commit();
+      transactionStarted = false;
+
+      return res.status(200).json({
+        success: true,
+        message: "Order delivered successfully.",
+        orderId
+      });
+
+    } catch (error) {
+      if (connection && transactionStarted) {
+        await connection.rollback();
+      }
+
+      console.error("Rider delivery confirmation error:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Unable to confirm delivery."
+      });
+
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  }
+);
+
+// RIDER: FETCH AVAILABLE ORDERS
+router.get(
+  "/rider/orders",
+  authenticateToken,
+  authorizeRoles("rider"),
+  async (req, res) => {
+    try {
+      const [orders] = await db.query(`
+        SELECT
+          o.id,
+          o.customer_name,
+          o.customer_email,
+          o.customer_phone,
+          o.total_amount,
+          o.payment_method,
+          o.payment_status,
+          o.status,
+          o.address,
+          o.apartment,
+          o.city,
+          o.state,
+          o.postal_code,
+          o.country,
+          o.created_at
+        FROM orders o
+        WHERE
+          (
+            (
+              LOWER(o.payment_method) = 'cod'
+              AND o.payment_status = 'pending'
+              AND o.status = 'pending'
+            )
+            OR
+            (
+              LOWER(o.payment_method) <> 'cod'
+              AND o.payment_status = 'paid'
+              AND o.status = 'placed'
+            )
+          )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM rider_orders ro
+            WHERE ro.order_id = o.id
+              AND ro.status <> 'cancelled'
+          )
+        ORDER BY o.created_at ASC
+      `);
+
+      if (!orders.length) {
+        return res.json({ success: true, orders: [] });
+      }
+
+      const orderIds = orders.map(order => order.id);
+      const placeholders = orderIds.map(() => "?").join(",");
+
+      const [items] = await db.query(
+        `SELECT
+          oi.order_id,
+          oi.product_id,
+          COALESCE(oi.product_name, p.name) AS product_name,
+          oi.quantity,
+          oi.price,
+          oi.subtotal,
+          oi.product_size,
+          oi.product_color,
+          COALESCE(oi.image_path, p.image_path) AS image_path
+        FROM order_items oi
+        LEFT JOIN products p ON p.id = oi.product_id
+        WHERE oi.order_id IN (${placeholders})`,
+        orderIds
+      );
+
+      const itemsByOrder = new Map();
+
+      for (const item of items) {
+        const key = String(item.order_id);
+
+        if (!itemsByOrder.has(key)) {
+          itemsByOrder.set(key, []);
+        }
+
+        itemsByOrder.get(key).push(item);
+      }
+
+      const ordersWithItems = orders.map(order => ({
+        ...order,
+        items: itemsByOrder.get(String(order.id)) || [],
+      }));
+
+      return res.json({
+        success: true,
+        orders: ordersWithItems,
+      });
+    } catch (error) {
+      console.error("Rider orders fetch error:", error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Unable to fetch available orders.",
+      });
+    }
+  }
+);
 
 export default router;
