@@ -18,7 +18,7 @@ import Feather from '@react-native-vector-icons/feather';
 import { Product as CartProduct, useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 
-const API_BASE = 'https://online-order-system-1.onrender.com';
+const API_BASE = 'http://localhost:5000';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 type ProductData = {

@@ -6,6 +6,10 @@ export type Product = {
   name: string;
   price: number;
   image: ImageSourcePropType;
+  categoryId?: number | null;
+  description?: string | null;
+  stock?: number;
+  pricingType?: string;
 };
 
 export type CartItem = Product & {
@@ -19,9 +23,9 @@ type CartContextType = {
   increaseQuantity: (id: number, size?: string) => void;
   decreaseQuantity: (id: number, size?: string) => void;
   removeFromCart: (id: number, size?: string) => void;
+  clearCart: () => void;
   cartCount: number;
   cartTotal: number;
-  clearCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -30,9 +34,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const clearCart = () => {
-  setCartItems([]);
-};
 
   const addToCart = (product: Product, size?: string) => {
     setCartItems(current => {
@@ -80,6 +81,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+const clearCart = () => {
+  setCartItems([]);
+};
+
   const cartCount = cartItems.reduce(
     (total, item) => total + item.quantity,
     0,
@@ -98,9 +103,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         increaseQuantity,
         decreaseQuantity,
         removeFromCart,
+        clearCart,
         cartCount,
         cartTotal,
-        clearCart,
       }}>
       {children}
     </CartContext.Provider>

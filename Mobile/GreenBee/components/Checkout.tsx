@@ -31,7 +31,7 @@ interface CheckoutProps {
   onContinueShopping: () => void;
 }
 
-const API_URL = 'https://online-order-system-1.onrender.com/api';
+const API_URL = 'http://localhost:5000/api';
 
 const Checkout: React.FC<CheckoutProps> = ({
   onBackToCart,
