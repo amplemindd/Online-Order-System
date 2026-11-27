@@ -14,6 +14,8 @@ import {
     authorizeRoles
 } from "./authMiddleware.js";
 import orderRoutes from "./orderRoutes.js";
+import pricingRoutes from "./pricingRoutes.js";
+import { initializePricingDatabase } from "./pricingDb.js";
 import addressRoutes from "./addressRoutes.js";
 
 dotenv.config({ path: new URL("../.env", import.meta.url) });
@@ -63,6 +65,7 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
 app.use("/api", orderRoutes);
+app.use("/api", pricingRoutes);
 app.use("/api", addressRoutes);
 
 // Multer configuration
@@ -1693,6 +1696,7 @@ app.use((error, req, res, next) => {
 async function startServer() {
     try {
         await initializeDatabase();
+        await initializePricingDatabase();
 
         app.listen(PORT, "0.0.0.0", () => {
             console.log(`Server running on http://localhost:${PORT}`);

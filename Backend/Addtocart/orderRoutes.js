@@ -2,6 +2,7 @@ import express from "express";
 import crypto from "crypto";
 import db from "./db.js";
 import { authenticateToken, authorizeRoles } from "./authMiddleware.js";
+import { calculatePricing, savePricingSnapshot } from "./pricingService.js";
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ function validateCustomer(customer = {}) {
  * Cart rows must contain product id and positive integer quantity.
  * Product price/name/image are read from MySQL.
  */
-async function createOrderRows(connection, userId, customer, items, paymentMethod) {
+async function createOrderRows(connection, userId, customer, items, paymentMethod, couponCode = null) {
   if (!Array.isArray(items) || items.length === 0) {
     throw new Error("Your cart is empty.");
   }
@@ -50,7 +51,7 @@ async function createOrderRows(connection, userId, customer, items, paymentMetho
     }
 
     const [products] = await connection.execute(
-      "SELECT id, name, price, image_path, stock FROM products WHERE id = ? FOR UPDATE",
+      "SELECT id, name, price, image_path, stock, hsn_code, gst_rate, tax_inclusive FROM products WHERE id = ? FOR UPDATE",
       [productId]
     );
     if (!products.length) throw new Error(`Product ${productId} is no longer available.`);
@@ -62,7 +63,6 @@ async function createOrderRows(connection, userId, customer, items, paymentMetho
 
     const price = money(product.price);
     const subtotal = money(price * quantity);
-    total = money(total + subtotal);
 
     normalized.push({
       productId,
@@ -71,10 +71,16 @@ async function createOrderRows(connection, userId, customer, items, paymentMetho
       quantity,
       price,
       subtotal,
+      hsn_code: product.hsn_code,
+      gst_rate: product.gst_rate,
+      tax_inclusive: product.tax_inclusive,
       size: item.size ? String(item.size).slice(0, 50) : null,
       color: item.color ? String(item.color).slice(0, 50) : null,
     });
   }
+
+  const pricing = await calculatePricing(connection, normalized, couponCode || customer.couponCode || null);
+  total = pricing.grandTotal;
 
   const customerName = `${customer.firstName || ""} ${customer.lastName || ""}`.trim();
   const [orderResult] = await connection.execute(
@@ -114,18 +120,22 @@ async function createOrderRows(connection, userId, customer, items, paymentMetho
     );
   }
 
-  return { orderId, total };
+  const couponId = pricing.coupon?.code
+    ? (await connection.execute("SELECT id FROM coupons WHERE code = ? FOR UPDATE", [pricing.coupon.code]))[0][0]?.id
+    : null;
+  await savePricingSnapshot(connection, orderId, userId, pricing, couponId);
+  return { orderId, total, pricing };
 }
 
 router.post("/orders/cod", authenticateToken, async (req, res) => {
   const connection = await db.getConnection();
   try {
-    const { customer, items } = req.body || {};
+    const { customer, items, couponCode } = req.body || {};
     const validationError = validateCustomer(customer);
     if (validationError) return res.status(400).json({ success: false, message: validationError });
 
     await connection.beginTransaction();
-    const order = await createOrderRows(connection, req.user.id, customer, items, "cod");
+    const order = await createOrderRows(connection, req.user.id, customer, items, "cod", couponCode);
     await connection.commit();
 
     return res.status(201).json({
@@ -133,6 +143,7 @@ router.post("/orders/cod", authenticateToken, async (req, res) => {
       message: "Your COD order has been placed.",
       orderId: order.orderId,
       total: order.total,
+      pricing: order.pricing,
       currency: "INR",
       paymentStatus: "pending",
     });
@@ -154,12 +165,12 @@ router.post("/payments/razorpay/order", authenticateToken, async (req, res) => {
 
   const connection = await db.getConnection();
   try {
-    const { customer, items } = req.body || {};
+    const { customer, items, couponCode } = req.body || {};
     const validationError = validateCustomer(customer);
     if (validationError) return res.status(400).json({ success: false, message: validationError });
 
     await connection.beginTransaction();
-    const order = await createOrderRows(connection, req.user.id, customer, items, "razorpay");
+    const order = await createOrderRows(connection, req.user.id, customer, items, "razorpay", couponCode);
     const receipt = `gb_${order.orderId}`;
 
     const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
@@ -197,6 +208,7 @@ router.post("/payments/razorpay/order", authenticateToken, async (req, res) => {
       orderId: order.orderId,
       razorpayOrderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
+      pricing: order.pricing,
       currency: "INR",
       keyId,
       customer: {
@@ -356,10 +368,14 @@ router.get("/orders/my-orders/:id", authenticateToken, async (req, res) => {
       [orderId]
     );
 
+    const [[pricingSnapshot]] = await db.execute(
+      "SELECT breakdown FROM order_pricing_snapshots WHERE order_id = ?", [orderId]
+    );
     return res.json({
       success: true,
       order: orders[0],
-      items
+      items,
+      pricing: pricingSnapshot ? JSON.parse(pricingSnapshot.breakdown) : null
     });
   } catch (error) {
     console.error("Customer order detail error:", error);
@@ -406,7 +422,13 @@ router.get("/admin/orders/:id", authenticateToken, authorizeRoles("admin"), asyn
    WHERE oi.order_id = ?`,
   [orderId]
 );
-    res.json({ success: true, order: orders[0], items });
+    const [[pricingSnapshot]] = await db.execute(
+      "SELECT breakdown FROM order_pricing_snapshots WHERE order_id = ?", [orderId]
+    );
+    res.json({
+      success: true, order: orders[0], items,
+      pricing: pricingSnapshot ? JSON.parse(pricingSnapshot.breakdown) : null
+    });
   } catch (error) {
     console.error("Admin order detail error:", error);
     res.status(500).json({ success: false, message: "Unable to fetch order details." });
