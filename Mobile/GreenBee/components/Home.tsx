@@ -39,12 +39,12 @@ import NotFound from './NotFound';
 import OrderHistory from './OrderHistory';
 import ProductDetails from './ProductDetails';
 
-const API_BASE = "http://10.0.2.2:5000/api";
+const API_BASE = "http://localhost:5000/api";
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SIDEBAR_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 320);
 
 
-const SERVER_URL = "http://10.0.2.2:5000";
+const SERVER_URL = "http://localhost:5000";
 
 const getImageUrl = (imagePath?: string | null) => {
   if (!imagePath) return undefined;
@@ -104,15 +104,15 @@ const [showOrderHistory, setShowOrderHistory] = useState(false);
 
   const insets = useSafeAreaInsets();
 
-  const [selectedCategory, setSelectedCategory] =
-  useState<string | null>(null);
+const [selectedCategory, setSelectedCategory] =
+  useState<number | string | null>(null);
 
   const getImageUrl = (imagePath?: string | null): string | null => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath;
     }
-    return `http://10.0.2.2:5000/${imagePath.replace(/^\/+/, '')}`;
+    return `http://localhost:5000/${imagePath.replace(/^\/+/, '')}`;
   };
 
   useEffect(() => {
@@ -434,7 +434,7 @@ if (pageNavigation[item]) {
     <AboutUs />
   ) : showProducts ? (
   <Products
-    categoryName={selectedCategory}
+    categoryId={selectedCategory}
     onProductPress={(product) => setSelectedProduct(product)}
     onBack={() => {
       setShowProducts(false);
@@ -468,7 +468,7 @@ if (pageNavigation[item]) {
               style={styles.categoryCard}
               activeOpacity={0.8}
               onPress={() => {
-  setSelectedCategory(category.name);
+  setSelectedCategory(category.id);
   setShowProducts(true);
   setCategoryOpen(false);
   scrollToTop();

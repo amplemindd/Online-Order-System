@@ -51,7 +51,7 @@ const Login: React.FC<LoginProps> = ({
 
     try {
       const response = await fetch(
-        'https://online-order-system-1.onrender.com/api/login',
+        'http://localhost:5000/api/login',
         {
           method: 'POST',
           headers: {
@@ -87,12 +87,16 @@ Alert.alert(
   [{ text: 'Continue', onPress: onBack }]
 );
 
-    } catch (error) {
-      Alert.alert(
-        'Connection Error',
-        'Unable to connect to server. Please try again.'
-      );
-    } finally {
+   } catch (error) {
+  console.error('LOGIN ERROR:', error);
+
+  Alert.alert(
+    'Login Error',
+    String(error)
+  );
+}
+
+    finally {
       setLoading(false);
     }
   };

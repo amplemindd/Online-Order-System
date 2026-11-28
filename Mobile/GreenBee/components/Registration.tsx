@@ -100,7 +100,7 @@ interface RegistrationProps {
 
 try {
   const response = await fetch(
-    'https://online-order-system-1.onrender.com/api/register',
+    'http://localhost:5000/api/register',
     {
       method: 'POST',
       headers: {

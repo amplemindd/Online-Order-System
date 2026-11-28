@@ -10,9 +10,10 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'https://online-order-system-1.onrender.com/api';
+const API_URL = 'http://localhost:5000/api';
 
 interface Order {
   id: number;
@@ -28,6 +29,7 @@ interface Order {
   state?: string;
   postal_code?: string;
   country?: string;
+  rider_assigned?: boolean | number;
 }
 
 interface OrderItem {
@@ -43,6 +45,16 @@ interface OrderItem {
 interface OrderDetails {
   order: Order;
   items: OrderItem[];
+}
+
+interface RiderTracking {
+  id: number;
+  name: string;
+  phone: string;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  location_updated_at: string | null;
 }
 
 interface Props {
@@ -75,6 +87,73 @@ const OrderHistory: React.FC<Props> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [trackingOrderId, setTrackingOrderId] = useState<number | null>(null);
+  const [rider, setRider] = useState<RiderTracking | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState('');
+
+const fetchRiderTracking = async (orderId: number, showLoader = false) => {
+  try {
+    if (showLoader) {
+      setTrackingLoading(true);
+    }
+
+    const token = await AsyncStorage.getItem('userToken');
+
+    if (!token) {
+      setTrackingError('Please log in again to track your order.');
+      return;
+    }
+
+    const response = await fetch(
+      `${API_URL}/orders/my-orders/${orderId}/tracking`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      setTrackingError(data.message || 'Unable to fetch rider details.');
+      return;
+    }
+
+    setRider(data.rider);
+    setTrackingError('');
+  } catch (error) {
+    console.error('Rider tracking error:', error);
+    setTrackingError('Unable to connect to the server. Please try again.');
+  } finally {
+    if (showLoader) {
+      setTrackingLoading(false);
+    }
+  }
+};
+
+useEffect(() => {
+  if (trackingOrderId === null) {
+    return;
+  }
+
+  fetchRiderTracking(trackingOrderId, true);
+
+  const interval = setInterval(() => {
+    fetchRiderTracking(trackingOrderId);
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [trackingOrderId]);
+
+const startTracking = (orderId: number) => {
+  setRider(null);
+  setTrackingError('');
+  setTrackingOrderId(orderId);
+};
 
   const fetchOrders = useCallback(async (isRefresh = false) => {
     try {
@@ -210,6 +289,92 @@ const OrderHistory: React.FC<Props> = ({ onBack }) => {
     );
   }
 
+if (trackingOrderId !== null) {
+  const latitude = Number(rider?.latitude);
+  const longitude = Number(rider?.longitude);
+  const hasLocation =
+    rider?.latitude !== null &&
+    rider?.longitude !== null &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude);
+
+  const mapHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+      <style>
+        html, body, #map { height: 100%; margin: 0; padding: 0; }
+      </style>
+    </head>
+    <body>
+      <div id="map"></div>
+      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+      <script>
+        const map = L.map('map').setView(
+          [${hasLocation ? latitude : 21.1458}, ${hasLocation ? longitude : 79.0882}],
+          16
+        );
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        ${hasLocation ? `
+          L.marker([${latitude}, ${longitude}])
+            .addTo(map)
+            .bindPopup('Your delivery rider')
+            .openPopup();
+        ` : ''}
+      </script>
+    </body>
+    </html>
+  `;
+
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => setTrackingOrderId(null)}
+      >
+        <Text style={styles.backText}>‹ Back to Order Details</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.heading}>Track Your Order</Text>
+      <Text style={styles.subtitle}>Order #{trackingOrderId}</Text>
+
+      {trackingLoading && !rider ? (
+        <ActivityIndicator size="large" color="#16845C" />
+      ) : trackingError && !rider ? (
+        <Text style={styles.value}>{trackingError}</Text>
+      ) : rider ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Your Delivery Rider</Text>
+          <Text style={styles.value}>Name: {rider.name}</Text>
+          <Text style={styles.value}>Mobile: {rider.phone}</Text>
+          <Text style={styles.label}>
+            {hasLocation ? 'Live location available' : 'Waiting for rider GPS location...'}
+          </Text>
+        </View>
+      ) : null}
+
+      {rider && hasLocation && (
+        <View style={{ height: 400, marginTop: 15, overflow: 'hidden', borderRadius: 12 }}>
+          <WebView
+            source={{ html: mapHtml }}
+            javaScriptEnabled
+            domStorageEnabled
+            originWhitelist={['*']}
+          />
+        </View>
+      )}
+
+      {trackingError !== '' && rider && (
+        <Text style={styles.label}>{trackingError}</Text>
+      )}
+    </View>
+  );
+}
+
   if (selectedOrder) {
     const { order, items } = selectedOrder;
 
@@ -291,6 +456,18 @@ const OrderHistory: React.FC<Props> = ({ onBack }) => {
             ₹{Number(order.total_amount).toFixed(2)}
           </Text>
         </View>
+
+        {Number(order.rider_assigned) === 1 && (
+          <TouchableOpacity
+            style={styles.trackOrderButton}
+            activeOpacity={0.8}
+             onPress={() => startTracking(order.id)}
+         >
+            <Text style={styles.trackOrderButtonText}>
+              Track Order
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={{ height: 30 }} />
       </ScrollView>
@@ -517,6 +694,19 @@ const styles = StyleSheet.create({
   shopButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  trackOrderButton: {
+    backgroundColor: '#16845C',
+    paddingVertical: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  trackOrderButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
   },
   card: {
     backgroundColor: '#FFFFFF',

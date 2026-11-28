@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,125 +6,60 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Modal,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 
 import { Product, useCart } from '../context/CartContext';
+import { useWishlist } from '../context/WishlistContext';
+import { fetchProducts } from './services/ProductService';
 
-const API_BASE_URL = 'https://online-order-system-1.onrender.com';
+interface ProductsProps {
+  categoryId: number | string | null;
+  onProductPress: (product: Product) => void;
+  onBack: () => void;
+}
 
-type ApiProduct = {
-  id: number;
-  name: string;
-  price: string | number;
-  image_path: string | null;
-  description?: string;
-  stock?: number;
-  pricing_type?: string;
-  category?: string;
-  category_name?: string;
-  images?: Array<string | { image_path?: string; url?: string }>;
-  [key: string]: any;
-};
-
-type ProductsProps = {
-  categoryName?: string | null;
-  onBack?: () => void;
-  onProductPress?: (product: ApiProduct & Product) => void;
-};
-
-const Products: React.FC<ProductsProps> = ({ categoryName, onBack, onProductPress }) => {
+const Products: React.FC<ProductsProps> = ({
+  categoryId,
+  onProductPress,
+  onBack,
+}) => {
   const { addToCart, cartCount } = useCart();
+  const { toggleWishlist, isWishlisted } = useWishlist();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const [selectedProduct, setSelectedProduct] =
-    useState<Product | null>(null);
-
-  const [selectedSize, setSelectedSize] = useState('Medium');
-  const [quantity, setQuantity] = useState(1);
-
-  // Fetch products from backend
-  const fetchProducts = async () => {
-  try {
-    setLoading(true);
-    setError('');
-
-    console.log('API URL:', `${API_BASE_URL}/api/products`);
-
-    const response = await fetch(
-      `${API_BASE_URL}/api/products`,
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      },
-    );
-
-    console.log('API Status:', response.status);
-
-    const responseText = await response.text();
-
-    console.log('API Response:', responseText);
-
-    if (!response.ok) {
-      throw new Error(
-        `Server Error: ${response.status} - ${responseText}`,
-      );
-    }
-
-    const data = JSON.parse(responseText);
-
-    if (!data.success || !Array.isArray(data.products)) {
-      throw new Error('Invalid products API response.');
-    }
-
-    const formattedProducts: Product[] = data.products.map(
-      (item: ApiProduct) => ({
-        ...item,
-        id: item.id,
-        name: item.name,
-        price: Number(item.price),
-        image: item.image_path
-          ? {
-              uri: `${API_BASE_URL}/${item.image_path.replace(/^\/+/, '')}`,
-            }
-          : require('../assets/images/apples-p.jpg'),
-      }),
-    );
-
-    setProducts(formattedProducts);
-  } catch (err) {
-    console.log('PRODUCT API ERROR:', err);
-
-    const errorMessage =
-      err instanceof Error ? err.message : String(err);
-
-    setError(errorMessage);
-  } finally {
-    setLoading(false);
-  }
-};
+const filteredProducts = categoryId
+  ? products.filter(
+      product =>
+        String(product.categoryId) === String(categoryId),
+    )
+  : products;
 
   useEffect(() => {
-    fetchProducts();
+    loadProducts();
   }, []);
 
-  // Check whether product is Banana
-  const isBanana = (product: Product) =>
-    product.name.toLowerCase().includes('banana');
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-  // Add product to cart
+      const data = await fetchProducts();
+      setProducts(data);
+    } catch (err) {
+      console.error('Unable to load products:', err);
+      setError('Unable to load products. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAddToCart = (product: Product) => {
-    if (isBanana(product)) {
-      setSelectedProduct(product);
-      setSelectedSize('Medium');
-      setQuantity(1);
+    if (product.stock !== undefined && product.stock <= 0) {
+      Alert.alert('Out of Stock', `${product.name} is currently unavailable.`);
       return;
     }
 
@@ -136,223 +71,109 @@ const Products: React.FC<ProductsProps> = ({ categoryName, onBack, onProductPres
     );
   };
 
-  // Add Banana with selected size and quantity
-  const handleBananaAddToCart = () => {
-    if (!selectedProduct) return;
-
-    for (let i = 0; i < quantity; i++) {
-      addToCart(selectedProduct, selectedSize);
-    }
-
-    Alert.alert(
-      'Added to Cart',
-      `${quantity} ${selectedProduct.name} added successfully!`,
-    );
-
-    setSelectedProduct(null);
-  };
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Heading */}
       <View style={styles.headingContainer}>
-        {onBack && <TouchableOpacity onPress={onBack} style={styles.backButton}><Text style={styles.backButtonText}>‹  Back</Text></TouchableOpacity>}
-        <Text style={styles.heading}>{categoryName ? categoryName.toUpperCase() : 'OUR PRODUCTS'}</Text>
-
+        <Text style={styles.heading}>OUR PRODUCTS</Text>
         <Text style={styles.subheading}>
           Freshness delivered to your doorstep
         </Text>
       </View>
 
-      {/* Cart Information */}
       <View style={styles.cartInfo}>
         <Text style={styles.cartText}>
           Cart Items: {cartCount}
         </Text>
       </View>
 
-      {/* Loading */}
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#238B45" />
-
-          <Text style={styles.loadingText}>
-            Loading products...
+      {loading ? (
+        <ActivityIndicator size="large" color="#238B45" />
+      ) : error ? (
+        <View style={{ alignItems: 'center', marginTop: 20 }}>
+          <Text style={{ color: '#E53935', marginBottom: 12 }}>
+            {error}
           </Text>
-        </View>
-      )}
-
-      {/* Error */}
-      {!loading && error !== '' && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
 
           <TouchableOpacity
-            style={styles.retryButton}
-            onPress={fetchProducts}
+            style={styles.addButton}
+            onPress={loadProducts}
           >
-            <Text style={styles.addButtonText}>RETRY</Text>
+            <Text style={styles.addButtonText}>TRY AGAIN</Text>
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* Product Grid */}
-      {!loading && !error && (
+      ) : filteredProducts.length === 0 ? (
+        <Text style={{ textAlign: 'center', color: '#777' }}>
+          No products available.
+        </Text>
+      ) : (
         <View style={styles.productGrid}>
-          {products.filter(product => !categoryName || String((product as any).category_name || (product as any).category || '').toLowerCase() === categoryName.toLowerCase()).map(product => {
-            return (
-              <TouchableOpacity
-                style={styles.productCard}
-                key={product.id}
-                activeOpacity={0.88}
-                onPress={() => onProductPress?.(product as ApiProduct & Product)}
-              >
+            {filteredProducts.map(product => {
+          const wishlisted = isWishlisted(product.id);
 
-                {/* Product Image */}
+            return (
+              <View style={styles.productCard} key={product.id}>
+                <TouchableOpacity
+                  style={styles.heartButton}
+                  onPress={() => toggleWishlist(product)}
+                >
+                  <Text style={styles.heart}>
+                    {wishlisted ? '❤️' : '♡'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                style={styles.productPressArea}
+                onPress={() => onProductPress(product)}>
                 <Image
                   source={product.image}
                   style={styles.productImage}
                   resizeMode="cover"
                 />
 
-                {/* Product Name */}
                 <Text style={styles.productName}>
                   {product.name}
                 </Text>
+                </TouchableOpacity>
 
-                {/* Product Price */}
+
                 <Text style={styles.productPrice}>
                   ₹{product.price.toFixed(2)}
                 </Text>
 
-                {/* Add to Cart */}
+                <Text style={{ fontSize: 12, color: '#777', marginBottom: 8 }}>
+                  {product.pricingType || ''}
+                </Text>
+
                 <TouchableOpacity
-                  style={styles.addButton}
+                  style={[
+                    styles.addButton,
+                    product.stock !== undefined &&
+                      product.stock <= 0 && { backgroundColor: '#999' },
+                  ]}
                   onPress={() => handleAddToCart(product)}
                   activeOpacity={0.8}
+                  disabled={product.stock !== undefined && product.stock <= 0}
                 >
                   <Text style={styles.addButtonText}>
-                    {isBanana(product)
-                      ? 'SELECT OPTIONS'
+                    {product.stock !== undefined && product.stock <= 0
+                      ? 'OUT OF STOCK'
                       : 'ADD TO CART'}
                   </Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </View>
             );
           })}
-
-          {products.length === 0 && (
-            <Text style={styles.emptyText}>
-              No products available.
-            </Text>
-          )}
         </View>
       )}
-
-      {/* Banana Size and Quantity Modal */}
-      <Modal
-        visible={selectedProduct !== null}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedProduct(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Select Banana Options
-            </Text>
-
-            {/* Size Selection */}
-            <Text style={styles.modalLabel}>
-              Choose Size
-            </Text>
-
-            <View style={styles.sizeContainer}>
-              {['Small', 'Medium', 'Large'].map(size => (
-                <TouchableOpacity
-                  key={size}
-                  style={[
-                    styles.sizeButton,
-                    selectedSize === size &&
-                      styles.selectedSizeButton,
-                  ]}
-                  onPress={() => setSelectedSize(size)}
-                >
-                  <Text
-                    style={[
-                      styles.sizeText,
-                      selectedSize === size &&
-                        styles.selectedSizeText,
-                    ]}
-                  >
-                    {size}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Quantity Selection */}
-            <Text style={styles.modalLabel}>
-              Quantity
-            </Text>
-
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() =>
-                  setQuantity(Math.max(1, quantity - 1))
-                }
-              >
-                <Text style={styles.quantityButtonText}>
-                  −
-                </Text>
-              </TouchableOpacity>
-
-              <Text style={styles.quantityText}>
-                {quantity}
-              </Text>
-
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => setQuantity(quantity + 1)}
-              >
-                <Text style={styles.quantityButtonText}>
-                  +
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Add Banana */}
-            <TouchableOpacity
-              style={styles.modalAddButton}
-              onPress={handleBananaAddToCart}
-            >
-              <Text style={styles.addButtonText}>
-                ADD TO CART
-              </Text>
-            </TouchableOpacity>
-
-            {/* Cancel */}
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setSelectedProduct(null)}
-            >
-              <Text style={styles.cancelText}>
-                CANCEL
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </ScrollView>
   );
 };
 
-// Styles
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -362,9 +183,6 @@ const styles = StyleSheet.create({
     padding: 15,
     paddingBottom: 30,
   },
-
-  backButton: { alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 4 },
-  backButtonText: { color: '#238B45', fontSize: 14, fontWeight: '700' },
 
   headingContainer: {
     alignItems: 'center',
@@ -393,6 +211,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#238B45',
   },
+
+productPressArea: {
+  width: '100%',
+  alignItems: 'center',
+},
 
   productGrid: {
     flexDirection: 'row',
@@ -453,41 +276,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: 'bold',
-  },
-
-  loadingContainer: {
-    padding: 30,
-    alignItems: 'center',
-  },
-
-  loadingText: {
-    marginTop: 10,
-    color: '#777',
-  },
-
-  errorContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-
-  retryButton: {
-    backgroundColor: '#238B45',
-    borderRadius: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-  },
-
-  emptyText: {
-    width: '100%',
-    textAlign: 'center',
-    color: '#777',
-    padding: 20,
   },
 
   modalOverlay: {

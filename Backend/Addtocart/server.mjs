@@ -1515,6 +1515,107 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
+// RIDER LOGIN API
+app.post("/api/rider/login", async (req, res) => {
+    try {
+        const { mobileNumber, password } = req.body;
+        const cleanPhone = (mobileNumber || "").trim();
+
+        if (!cleanPhone || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Mobile number and password are required."
+            });
+        }
+
+        if (!process.env.JWT_SECRET) {
+            return res.status(500).json({
+                success: false,
+                message: "Authentication service is not configured."
+            });
+        }
+
+        const [riders] = await db.execute(
+            `SELECT
+                u.id,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.phone,
+                u.password,
+                u.role,
+                u.created_at,
+                rp.status,
+                rp.vehicle_type,
+                rp.license_number
+             FROM users u
+             INNER JOIN rider_profiles rp ON rp.user_id = u.id
+             WHERE u.phone = ?
+             AND u.role = 'rider'
+             LIMIT 1`,
+            [cleanPhone]
+        );
+
+        if (riders.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid mobile number or password."
+            });
+        }
+
+        const rider = riders[0];
+
+        const passwordMatch = await bcrypt.compare(
+            password,
+            rider.password
+        );
+
+        if (!passwordMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid mobile number or password."
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                userId: rider.id,
+                role: rider.role
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: process.env.JWT_EXPIRES_IN || "1d"
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Rider login successful!",
+            token,
+            user: {
+                id: rider.id,
+                first_name: rider.first_name,
+                last_name: rider.last_name,
+                email: rider.email,
+                mobile_number: rider.phone,
+                role: rider.role,
+                created_at: rider.created_at,
+                status: rider.status,
+                vehicle_type: rider.vehicle_type,
+                license_number: rider.license_number
+            }
+        });
+
+    } catch (error) {
+        console.error("Rider login error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Rider login failed."
+        });
+    }
+});
+
 // GET LOGGED-IN USER PROFILE
 app.get("/api/user/profile", authenticateToken, async (req, res) => {
     try {
@@ -1675,6 +1776,146 @@ app.post("/api/rider/activity", authenticateToken, authorizeRoles("rider"), asyn
   } catch (error) {
     console.error("Save rider activity error:", error);
     res.status(500).json({ success: false, message: "Unable to save rider activity." });
+  }
+});
+
+// Rider app: fetch dashboard summary.
+app.get("/api/rider/dashboard", authenticateToken, authorizeRoles("rider"), async (req, res) => {
+  try {
+    const earningPerDelivery = 30;
+
+    const [summaryRows] = await db.execute(
+      `SELECT
+         COUNT(ro.id) AS totalOrders,
+         COUNT(ro.id) * ? AS totalEarnings,
+         rp.status
+       FROM rider_profiles rp
+       LEFT JOIN rider_orders ro
+         ON ro.rider_id = rp.user_id
+         AND ro.status = 'delivered'
+       WHERE rp.user_id = ?
+       GROUP BY rp.status`,
+      [earningPerDelivery, req.user.id]
+    );
+
+    if (summaryRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Rider profile not found.",
+      });
+    }
+
+    return res.json({
+      success: true,
+      summary: {
+        totalOrders: Number(summaryRows[0].totalOrders),
+        totalEarnings: Number(summaryRows[0].totalEarnings),
+        status: summaryRows[0].status,
+      },
+    });
+  } catch (error) {
+    console.error("Rider dashboard fetch error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch dashboard details.",
+    });
+  }
+});
+
+// Rider app: fetch earnings from completed deliveries.
+app.get("/api/rider/earnings", authenticateToken, authorizeRoles("rider"), async (req, res) => {
+  const period = String(req.query.period || "today").toLowerCase();
+
+  // Temporary earning rate. Can be changed when the trainer confirms the policy.
+  const earningPerDelivery = 30;
+
+  const periods = {
+    today: {
+      condition: "DATE(delivered_at) = CURDATE()",
+      group: "HOUR(delivered_at)",
+      label: "DATE_FORMAT(MIN(delivered_at), '%l %p')",
+    },
+    week: {
+      condition: "delivered_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND delivered_at < DATE_ADD(CURDATE(), INTERVAL 1 DAY)",
+      group: "DATE(delivered_at)",
+      label: "DATE_FORMAT(MIN(delivered_at), '%a')",
+    },
+    month: {
+      condition: "YEAR(delivered_at) = YEAR(CURDATE()) AND MONTH(delivered_at) = MONTH(CURDATE())",
+      group: "DATE(delivered_at)",
+      label: "DATE_FORMAT(MIN(delivered_at), '%e %b')",
+    },
+  };
+
+  if (!periods[period]) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid earnings period.",
+    });
+  }
+
+  const selectedPeriod = periods[period];
+
+  try {
+    const [summaryRows] = await db.execute(
+      `SELECT
+         COUNT(*) AS totalOrders,
+         COUNT(*) * ? AS totalEarnings,
+         COALESCE(AVG(?), 0) AS averageEarning
+       FROM rider_orders
+       WHERE rider_id = ?
+         AND status = 'delivered'
+         AND ${selectedPeriod.condition}`,
+      [earningPerDelivery, earningPerDelivery, req.user.id]
+    );
+
+    const [chartData] = await db.execute(
+      `SELECT
+         ${selectedPeriod.label} AS label,
+         COUNT(*) AS orders,
+         COUNT(*) * ? AS earnings
+       FROM rider_orders
+       WHERE rider_id = ?
+         AND status = 'delivered'
+         AND ${selectedPeriod.condition}
+       GROUP BY ${selectedPeriod.group}
+       ORDER BY ${selectedPeriod.group} ASC`,
+      [earningPerDelivery, req.user.id]
+    );
+
+    const [transactions] = await db.execute(
+      `SELECT
+         order_id,
+         delivered_at,
+         ? AS earning_amount
+       FROM rider_orders
+       WHERE rider_id = ?
+         AND status = 'delivered'
+         AND ${selectedPeriod.condition}
+       ORDER BY delivered_at DESC
+       LIMIT 10`,
+      [earningPerDelivery, req.user.id]
+    );
+
+    return res.json({
+      success: true,
+      period,
+      earningPerDelivery,
+      summary: {
+        totalEarnings: Number(summaryRows[0].totalEarnings),
+        totalOrders: Number(summaryRows[0].totalOrders),
+        averageEarning: Number(summaryRows[0].averageEarning),
+      },
+      chartData,
+      transactions,
+    });
+  } catch (error) {
+    console.error("Rider earnings fetch error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Unable to fetch rider earnings.",
+    });
   }
 });
 
