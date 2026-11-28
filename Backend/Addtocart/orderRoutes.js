@@ -383,15 +383,30 @@ router.get("/orders/my-orders/:id", authenticateToken, async (req, res) => {
       [orderId]
     );
 
-    const [[pricingSnapshot]] = await db.execute(
-      "SELECT breakdown FROM order_pricing_snapshots WHERE order_id = ?", [orderId]
-    );
-    return res.json({
-      success: true,
-      order: orders[0],
-      items,
-      pricing: pricingSnapshot ? JSON.parse(pricingSnapshot.breakdown) : null
-    });
+    
+const [[pricingSnapshot]] = await db.execute(
+  "SELECT breakdown FROM order_pricing_snapshots WHERE order_id = ?",
+  [orderId]
+);
+
+let pricing = null;
+
+if (pricingSnapshot?.breakdown) {
+  const breakdown = pricingSnapshot.breakdown;
+
+  pricing =
+    typeof breakdown === "string"
+      ? JSON.parse(breakdown)
+      : breakdown;
+}
+
+return res.json({
+  success: true,
+  order: orders[0],
+  items,
+  pricing
+});
+
   } catch (error) {
     console.error("Customer order detail error:", error);
     return res.status(500).json({
