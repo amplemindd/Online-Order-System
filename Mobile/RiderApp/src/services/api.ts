@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+
+const API_BASE_URL = 'https://online-order-system-1.onrender.com/api';
 
 export const apiRequest = async (
   endpoint: string,
@@ -14,36 +15,40 @@ export const apiRequest = async (
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-const responseText = await response.text();
+    const responseText = await response.text();
 
-let data: any;
+    let data: any = {};
 
-try {
-  data = responseText ? JSON.parse(responseText) : {};
-} catch (error) {
-  console.error('NON-JSON API RESPONSE:', {
-    endpoint,
-    status: response.status,
-    contentType: response.headers.get('content-type'),
-    body: responseText.substring(0, 300),
-  });
+    try {
+      data = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      throw new Error(
+        `Invalid server response. HTTP ${response.status}`,
+      );
+    }
 
-  throw new Error(
-    `Non-JSON response from ${endpoint} (HTTP ${response.status})`,
-  );
-}
+    if (!response.ok) {
+      throw new Error(data.message || 'Something went wrong.');
+    }
 
+    return data;
+  } catch (error: any) {
+    console.error('API REQUEST ERROR:', error);
 
-  if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong.');
+    if (error.message === 'Network request failed') {
+      throw new Error(
+        'Unable to connect to server. Please check your internet connection or server URL.',
+      );
+    }
+
+    throw error;
   }
-
-  return data;
 };
 
 export default API_BASE_URL;
